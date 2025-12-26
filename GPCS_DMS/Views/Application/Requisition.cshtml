@@ -3,13 +3,46 @@
 }
 
 <div class="container">
-    <div id="applicationContainer"></div>
+    <!-- Main Container -->
+    <div id="applicationContainer">
+        
+        <!-- Header Section (Title + Info) -->
+        <div id="headerSection" class="mb-3"></div>
+        
+        <!-- Top Action Buttons -->
+        <div id="topActionButtons"></div>
+        
+        <!-- Form Section (Master Data) -->
+        <div id="formSection" class="card mb-3">
+            <div class="card-body"></div>
+        </div>
+        
+        <!-- Items Section (Grid/Table) -->
+        <div id="itemsSection" class="card mb-3">
+            <div class="card-body"></div>
+        </div>
+
+        <!-- Workflow Section -->
+        <div id="workflowSection" class="card mb-3">
+            <div class="card-body"></div>
+        </div>
+        
+        <!-- Bottom Action Buttons -->
+        <div id="bottomActionButtons"></div>
+        
+    </div>
+    
+    <!-- Hidden Fields for Config -->
     <input type="hidden" id="applicationType" value="@ViewBag.ApplicationType" />
     <input type="hidden" id="applicationId" value="@ViewBag.ApplicationId" />
 </div>
 
 
 @section Scripts {
+    <script src="~/js/application/app-header.js"></script>
+    <script src="~/js/application/app-button-handler.js"></script>
+    <script src="~/js/application/app-button.js"></script>
+    <script src="~/js/application/app-main.js"></script>
     <script>
         function validateDocumentType(){
             var applicationType = document.getElementById("applicationType").value;
@@ -29,10 +62,14 @@
             var applicationType = validateDocumentType();
             var applicationId = validateApplicationId();
             if(applicationType){
-                // Proceed with logic using applicationType and applicationId
-                console.log($`Application ContainerId : applicationContainer`);
-                console.log("Application Type: " + applicationType);
-                console.log("Application ID: " + applicationId);
+                const app = new AppMain({
+                    applicationType: applicationType,
+                    applicationId: applicationId || null
+                });
+
+                // Expose appMain globally for debugging
+                window.app = app;
+                console.log("AppMain initialized:", app);
             }
         });
 

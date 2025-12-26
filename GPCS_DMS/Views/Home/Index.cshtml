@@ -2,21 +2,15 @@
     ViewData["Title"] = "Home Page";
 }
 @section Styles {
-    <link rel="stylesheet" href="~/css/application/app-notification.css" />
-    <link rel="stylesheet" href="~/css/application/app-dialog.css" />
-    <link rel="stylesheet" href="~/css/application/app-loading.css" />
+
 }
 
 <div class="text-center">
+    <a asp-controller="Application" asp-action="SetApplicationType" asp-route-applicationType="NewMaterial" class="btn btn-primary btn-lg mb-4">Create New Requisition</a>
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 </div>
 @section Scripts {
-    <script src="~/js/application/app-core.js"></script>
-    <script src="~/js/application/app-dialog.js"></script>
-    <script src="~/js/application/app-loading.js"></script>
-    <script src="~/js/application/app-notification.js"></script>
-
     <script>
         document.addEventListener("DOMContentLoaded", async function() {
             // Example usage of appCore and appNotification
