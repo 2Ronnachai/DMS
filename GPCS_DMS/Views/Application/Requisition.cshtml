@@ -1,0 +1,40 @@
+﻿@{
+    ViewData["Title"] = "Requisition";
+}
+
+<div class="container">
+    <div id="applicationContainer"></div>
+    <input type="hidden" id="applicationType" value="@ViewBag.ApplicationType" />
+    <input type="hidden" id="applicationId" value="@ViewBag.ApplicationId" />
+</div>
+
+
+@section Scripts {
+    <script>
+        function validateDocumentType(){
+            var applicationType = document.getElementById("applicationType").value;
+            if(!applicationType || applicationType.trim() === ""){
+                alert("Application Type is required.");
+                return false;
+            }
+            return applicationType;
+        }
+
+        function validateApplicationId(){
+            var applicationId = document.getElementById("applicationId").value;
+            return applicationId;
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            var applicationType = validateDocumentType();
+            var applicationId = validateApplicationId();
+            if(applicationType){
+                // Proceed with logic using applicationType and applicationId
+                console.log($`Application ContainerId : applicationContainer`);
+                console.log("Application Type: " + applicationType);
+                console.log("Application ID: " + applicationId);
+            }
+        });
+
+    </script>
+}

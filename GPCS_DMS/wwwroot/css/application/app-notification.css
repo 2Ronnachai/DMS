@@ -1,0 +1,244 @@
+/**
+ * Notification System - 和風デザイン (Japanese Design)
+ * Philosophy: 間 (Ma) - Negative space, Simplicity, Harmony
+ */
+
+.notification-container {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 380px;
+    width: 100%;
+    padding: 24px;
+}
+
+/* Positions */
+.notification-container.top-right {
+    top: 0;
+    right: 0;
+}
+
+.notification-container.top-left {
+    top: 0;
+    left: 0;
+}
+
+.notification-container.bottom-right {
+    bottom: 0;
+    right: 0;
+    flex-direction: column-reverse;
+}
+
+.notification-container.bottom-left {
+    bottom: 0;
+    left: 0;
+    flex-direction: column-reverse;
+}
+
+.notification-container.top-center {
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Notification Card - Minimalist approach */
+.notification {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 18px;
+    background: #ffffff;
+    border-radius: 2px;
+    border: 1px solid #e8e8e8;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: all 0.25s ease-out;
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Noto Sans JP', 'Yu Gothic', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Type Indicators - Subtle accent line */
+.notification::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    border-radius: 2px 0 0 2px;
+}
+
+.notification-success::before {
+    background: #52c41a;
+}
+
+.notification-error::before {
+    background: #ff4d4f;
+}
+
+.notification-warning::before {
+    background: #faad14;
+}
+
+.notification-info::before {
+    background: #1890ff;
+}
+
+/* Icon - Monochrome & Clean */
+.notification-icon {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.85;
+}
+
+.notification-success .notification-icon {
+    color: #52c41a;
+}
+
+.notification-error .notification-icon {
+    color: #ff4d4f;
+}
+
+.notification-warning .notification-icon {
+    color: #faad14;
+}
+
+.notification-info .notification-icon {
+    color: #1890ff;
+}
+
+/* Content - Typography focus */
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-message {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #262626;
+    word-wrap: break-word;
+    font-weight: 400;
+}
+
+/* Close Button - Subtle interaction */
+.notification-close {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: #bfbfbf;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: color 0.2s ease;
+    padding: 0;
+    opacity: 0.6;
+}
+
+.notification-close:hover {
+    color: #8c8c8c;
+    opacity: 1;
+}
+
+.notification-close:active {
+    color: #595959;
+}
+
+.notification-close svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* Hover effect - Very subtle */
+.notification:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    border-color: #d9d9d9;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .notification-container {
+        max-width: 100%;
+        padding: 16px;
+        gap: 6px;
+    }
+
+    .notification {
+        padding: 12px 16px;
+        gap: 12px;
+    }
+
+    .notification-message {
+        font-size: 12px;
+    }
+}
+
+/* Light Mode - Soft palette */
+@media (prefers-color-scheme: light) {
+    .notification {
+        background: #fafafa;
+        border-color: #f0f0f0;
+    }
+}
+
+/* Dark Mode - Muted elegance */
+/* @media (prefers-color-scheme: dark) {
+    .notification {
+        background: #1f1f1f;
+        border-color: #303030;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .notification:hover {
+        background: #262626;
+        border-color: #434343;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
+
+    .notification-message {
+        color: #e8e8e8;
+    }
+
+    .notification-close {
+        color: #595959;
+    }
+
+    .notification-close:hover {
+        color: #8c8c8c;
+    }
+} */
+
+/* Animation refinement */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.notification.show {
+    animation: slideIn 0.25s ease-out;
+}

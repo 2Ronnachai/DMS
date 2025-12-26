@@ -1,0 +1,3 @@
+﻿@using GPCS_DMS
+@using GPCS_DMS.Models
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers

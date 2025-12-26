@@ -1,0 +1,63 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/application/app-notification.css" />
+    <link rel="stylesheet" href="~/css/application/app-dialog.css" />
+    <link rel="stylesheet" href="~/css/application/app-loading.css" />
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+</div>
+@section Scripts {
+    <script src="~/js/application/app-core.js"></script>
+    <script src="~/js/application/app-dialog.js"></script>
+    <script src="~/js/application/app-loading.js"></script>
+    <script src="~/js/application/app-notification.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async function() {
+            // Example usage of appCore and appNotification
+            @* appNotification.show("Welcome to the Home Page!", "success", 3000);
+            appNotification.show("This is an info message.", "info", 5000);
+            appNotification.show("Warning! Check your input.", "warning", 7000);
+            appNotification.show("Error occurred while loading data.", "error", 10000); *@
+
+            // Example usage of appDialog
+            const result = await appDialog.confirm({
+                title: "Please Confirm",
+                message: "Do you want to proceed with this action?",
+                okText: "Yes",
+                cancelText: "No"
+            });
+
+            if (result) {
+                AppLoading.show("Processing your request...");
+                // Simulate some processing time
+                setTimeout(() => {
+                    appLoading.hide();
+                    appNotification.show("Action completed successfully!", "success", 3000);
+                }, 3000);
+            } else {
+                await appLoading.wrap(async () => {
+                    // Simulate some processing time
+                    return new Promise((resolve) => {
+                        setTimeout(() => {
+                            resolve();
+                        }, 2000);
+                    });
+                }, "Cancelling the action...");
+            }
+
+            setTimeout(() => {
+                appDialog.alert({
+                    title: "Alert",
+                    message: "This is an important alert message.",
+                    okText: "Got it"
+                });
+            }, 20000);
+        });
+    </script>
+}
