@@ -7,12 +7,15 @@ class AppCore {
 
         AppCore.instance = this;
         this.config ={
-
+            baseURL: window.APP_CONFIG?.baseUrl || '',
         };
     }
 
     static Http = class {
         static async _request(url, options = {}){
+            const core = AppCore.instance;
+            const fullUrl = url.startsWith('http') ? url : core.config.baseURL + url;
+
             const defaultOptions = {
                 credentials: 'include',
                 headers:{
@@ -22,7 +25,7 @@ class AppCore {
             };
 
             try{
-                const response = await fetch(url, {...defaultOptions, ...options});
+                const response = await fetch(fullUrl, {...defaultOptions, ...options});
                 if(!response.ok){
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }

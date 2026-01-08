@@ -1,11 +1,5 @@
 class AppMain {
     constructor(config = {}){
-        if(AppMain.instance){
-            return AppMain.instance;
-        }
-
-        AppMain.instance = this;
-
         // Core dependencies
         this.core = appCore;
         this.http = Http;
@@ -26,8 +20,22 @@ class AppMain {
         this.actionHandler = null;
         this.header = new AppHeader(this);
 
+         this.endpoints ={
+            loadPermissions: `applications/has-permission/`,
+            loadHeaderData: (type) => `applications/workflow/${type}`,
+        };
+
         // Initialize core components
         this._init();
+
+        if(AppMain.instance){
+            return AppMain.instance;
+        }
+        AppMain.instance = this;
+    }
+
+    getDateFormat(){
+        return 'dd/MM/yyyy';
     }
 
     async _init(){
@@ -79,22 +87,12 @@ class AppMain {
 
     async _loadPermissions(){
         try{
-            const response = {
-                success: true,
-                data: {
-                    mode: 'create',
-                    availableActions: ['save', 'submit','back', 'cancel', 'return', 'approve', 'reject']
-                },
-                message: ''
-            };
-            // Example: Fetch permissions from server
-            // const response = await this.http.get(`/api/permissions?applicationType=${this.applicationType}&userRole=${this.userRole}`);
+            const response = await this.http.get(this.endpoints.loadPermissions + `${this.applicationId || ''}`);
             if(response && response.success){
                 this.permissions = response.data;
                 // Determine mode and available actions based on permissions
                 this.mode = this.permissions.mode; // e.g., 'create', 'edit', 'view', 'approve'
                 this.avaiableActions = this.permissions.availableActions; // e.g., ['save', 'submit', 'approve']
-
                 console.log('Permissions loaded:', this.permissions);
             }else{
                 throw new Error('Failed to load permissions from server.');
@@ -111,24 +109,9 @@ class AppMain {
     async _loadApplicationData(){
         if(this.applicationType && !this.applicationId){
             try{
-                const response = {
-                    success: true,
-                    data: {
-                        documentType: 'Requisition',
-                        documentNumber: 'REQ-2024-0001',
-                        documentDate: '2024-06-15',
-                        requestor: 'John Doe',
-                        department: 'Finance',
-                        createdDate: '2024-06-10T14:30:00',
-                        status: 'Draft',
-                        isUrgent:true,
-                    },
-                    message: ''
-                };
-                // Example: Fetch application data from server
-                // const response = await this.http.get(`/api/applications/${this.applicationType}/${this.applicationId}`);
+                const response = await this.http.get(this.endpoints.loadHeaderData(this.applicationType));
                 if(response && response.success){
-                    this.applicationData = response.data;
+                    this.applicationData = response.data ? response.data : response;
                     this.header.setData(this.applicationData);
                     console.log('Application data loaded:', this.applicationData);
                 }else{
@@ -137,6 +120,10 @@ class AppMain {
             }catch(error){
                 console.error('Failed to load application data:', error);
             }
+        }else if(this.applicationId && this.applicationType){
+            // Load existing application data for edit/view/approve modes
+        }else{
+            // Show default header for new application and change mode to view
         }
     }
 

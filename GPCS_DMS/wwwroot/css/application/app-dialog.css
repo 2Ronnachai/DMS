@@ -189,6 +189,72 @@
     border-color: #d48806;
 }
 
+/* Confirm variant - เขียวแบบ Matcha */
+.dialog-btn.dialog-confirm.dialog-btn-ok {
+    background: #7cb342;
+    border-color: #7cb342;
+}
+
+.dialog-btn.dialog-confirm.dialog-btn-ok:hover {
+    background: #8bc34a;
+    border-color: #8bc34a;
+}
+
+.dialog-btn.dialog-confirm.dialog-btn-ok:active {
+    background: #689f38;
+    border-color: #689f38;
+}
+
+/* Info variant - Ai-iro (藍色) */
+.dialog-btn.dialog-info.dialog-btn-ok {
+    background: #5e9cd3;
+    border-color: #5e9cd3;
+}
+
+.dialog-btn.dialog-info.dialog-btn-ok:hover {
+    background: #7db3e0;
+    border-color: #7db3e0;
+}
+
+.dialog-btn.dialog-info.dialog-btn-ok:active {
+    background: #4682b4;
+    border-color: #4682b4;
+}
+
+
+/* Danger variant - แดงแบบ Beni (紅) */
+.dialog-btn.dialog-danger.dialog-btn-ok {
+    background: #e57373;
+    border-color: #e57373;
+}
+
+.dialog-btn.dialog-danger.dialog-btn-ok:hover {
+    background: #ef5350;
+    border-color: #ef5350;
+}
+
+.dialog-btn.dialog-danger.dialog-btn-ok:active {
+    background: #d32f2f;
+    border-color: #d32f2f;
+}
+
+/* Warning variant - ส้มแบบ Mikan (蜜柑) */
+.dialog-btn.dialog-warning.dialog-btn-ok {
+    background: #ffb74d;
+    border-color: #ffb74d;
+}
+
+.dialog-btn.dialog-warning.dialog-btn-ok:hover {
+    background: #ffa726;
+    border-color: #ffa726;
+}
+
+.dialog-btn.dialog-warning.dialog-btn-ok:active {
+    background: #f57c00;
+    border-color: #f57c00;
+}
+
+
 /* Responsive */
 @media (max-width: 640px) {
     .dialog {

@@ -48,6 +48,9 @@ pnpm-debug.log*
 # Node
 node_modules/
 dist/
+
+# Font Awesome
+wwwroot/lib/font-awesome/
 npm-debug.log
 yarn-error.log
 

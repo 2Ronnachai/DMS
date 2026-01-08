@@ -1,16 +1,19 @@
 ﻿@{
     ViewData["Title"] = "Requisition";
 }
+@section Styles {
+    <link rel="stylesheet" href="~/css/application/app-header.css" asp-append-version="true" />
+}
 
 <div class="container">
     <!-- Main Container -->
     <div id="applicationContainer">
         
-        <!-- Header Section (Title + Info) -->
-        <div id="headerSection" class="mb-3"></div>
-        
         <!-- Top Action Buttons -->
         <div id="topActionButtons"></div>
+
+        <!-- Header Section (Title + Info) -->
+        <div id="headerSection" class="mb-3"></div>
         
         <!-- Form Section (Master Data) -->
         <div id="formSection" class="card mb-3">
