@@ -32,6 +32,15 @@ class AppMain {
         this.endpoints ={
             loadPermissions: `applications/has-permission/`,
             loadHeaderData: (type) => `applications/workflow/${type}`,
+            lookups:{
+                units : 'units/lookups/',
+                suppliers : 'suppliers/lookups/',
+                categories : 'categories/lookups/',
+                exchangeRates : 'exchangerates/lookups/',
+                groupOfGoods : 'groupofgoods/lookups/',
+                materialTypes : 'materialtypes/lookups/',
+                supplierPurchasers : 'supplierPurchasers/lookups/'
+            }
         };
 
         // Initialize core components
@@ -141,6 +150,7 @@ class AppMain {
     async _initializeModules(){
         // Initialize action handler
         this.actionHandler = new AppButtonHandler(this);
+        this.formComponents = new AppFormComponents(this);
 
         // Initialize action buttons
         this.actionButtons = new AppButton(this);
@@ -151,9 +161,8 @@ class AppMain {
         this.header.render();
 
         // Initialize form module
-        this.formComponents = new AppFormComponents(this);
         this.form = new AppForm(this, this.applicationData);
-        this.form.render();
+        await this.form.render();
 
         // Initialize workflow module
         this.workflow = new AppWorkflow(this, this.applicationData);
@@ -185,5 +194,29 @@ class AppMain {
             'deleteitem': 'Delete Item'
         };
         return typeMap[this.applicationType.toLowerCase()] || 'Application';
+    }
+
+    onSubmitNewMaterialsItems(data){
+        // Handle submission logic for New Materials & Items
+        // Add to datagrid in items section
+        console.log('Submitted New Materials & Items:', data);
+    }
+
+    onSubmitNewItems(data){
+        // Handle submission logic for New Item
+        // Add to datagrid in items section
+        console.log('Submitted New Item:', data);
+    }
+
+    onSubmitEditItem(data){
+        // Handle submission logic for Edit Item
+        // Update datagrid in items section
+        console.log('Submitted Edit Item:', data);
+    }
+
+    onSubmitDeleteItem(data){
+        // Handle submission logic for Delete Item
+        // Update datagrid in items section
+        console.log('Submitted Delete Item:', data);
     }
 }

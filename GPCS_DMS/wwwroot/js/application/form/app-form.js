@@ -7,9 +7,9 @@ class AppForm{
         this.formInstance = null;
     }
 
-    render(){
+    async render(){
         this.formInstance = this._createForm();
-        this.formInstance.render();
+        await this.formInstance.render();
     }
 
     update(data){

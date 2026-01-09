@@ -7,9 +7,37 @@ class NewMaterialItemsForm {
         this.formInstance = null;
     }
 
-    render() {
-        this.container.innerHTML = '';
-        this._renderForm();
+    async render() {
+        try{
+            await this._loadLookupDataSources();
+            this.container.innerHTML = '';
+            this._renderForm();
+        }catch(error){
+            console.error('Error rendering NewMaterialItemsForm:', error);
+        }
+    }
+
+    async _loadLookupDataSources() {
+        let [categories , materialTypes, units, exchangeRates, groupOfGoods] = await Promise.all([
+            this.appForm.appMain.formComponents.getCategoryDataSource(),
+            this.appForm.appMain.formComponents.getMaterialTypeDataSource(),
+            this.appForm.appMain.formComponents.getUnitDataSource(),
+            this.appForm.appMain.formComponents.getExchangeRatesDataSource(),
+            this.appForm.appMain.formComponents.getGroupOfGoodsDataSource()
+        ]);
+
+        // Default Lookup Data
+        if(!exchangeRates || exchangeRates.length === 0){
+            exchangeRates = [{ id: 'THB', code: 'THB', displayName: 'THB (1.0000)', rateToTHB: 1 }];
+        }
+
+        this.lookupData = {
+            categories,
+            materialTypes,
+            units,
+            exchangeRates,
+            groupOfGoods
+        };
     }
 
     _renderForm() {
@@ -35,15 +63,6 @@ class NewMaterialItemsForm {
     }
 
     _renderNewMaterialAndItemsForm() {
-        const mockExchangeRates = [
-            { currencyCode: 'THB', rateToTHB: 1.0000 },
-            { currencyCode: 'USD', rateToTHB: 35.5000 },
-            { currencyCode: 'EUR', rateToTHB: 38.2500 },
-            { currencyCode: 'JPY', rateToTHB: 0.2400 },
-            { currencyCode: 'CNY', rateToTHB: 4.9500 },
-            { currencyCode: 'SGD', rateToTHB: 26.3000 }
-        ];
-
         // Helper: Description Validation Rules
         const getDescriptionValidationRules = (fieldName) => {
             return [
@@ -140,11 +159,12 @@ class NewMaterialItemsForm {
         };
 
         // Helper: Calculated THB Unit Price
-        const calculateTHBUnitPrice = () => {
+        const calculateTHBUnitPrice = async () => {
             const formData = this.formInstance.option('formData');
             const unitPrice = formData.unitPrice || 0;
             const currency = formData.currency || 'THB';
-            const selectedRate = mockExchangeRates.find(r => r.currencyCode === currency);
+            const exchangeRates = this.lookupData.exchangeRates || [];
+            const selectedRate = exchangeRates.find(r => r.code === currency);
             if (selectedRate) {
                 const thbUnitPrice = unitPrice * selectedRate.rateToTHB;
                 this.update('thbUnitPrice', thbUnitPrice);
@@ -172,13 +192,21 @@ class NewMaterialItemsForm {
                     label: { text: 'Category' },
                     editorType: 'dxSelectBox',
                     editorOptions: {
-                        dataSource: this.appForm.appMain.formComponents.getCategoryDataSource(),
-                        displayExpr: 'name',
+                        dataSource: this.lookupData.categories || [],
+                        displayExpr: 'displayName',
                         valueExpr: 'id',
                         placeholder: 'Select Category',
+                        showClearButton: true,
                         onValueChanged: (e) => {
-                            const selectedCategoryId = e.value;
-                            console.log('Selected Category ID:', selectedCategoryId);
+                            if(e.value){
+                                const selectedCategory = this.lookupData.categories.find(cat => cat.id === e.value);
+                                console.log('Selected Category:', selectedCategory);
+                                if(selectedCategory){
+                                    this.update('costCenter', selectedCategory.costCenter);
+                                }
+                            }else{
+                                this.update('costCenter', null);
+                            }
                         },
                         stylingMode: 'filled'
                     }
@@ -188,10 +216,11 @@ class NewMaterialItemsForm {
                     label: { text: 'Material Type' },
                     editorType: 'dxSelectBox',
                     editorOptions: {
-                        dataSource: this.appForm.appMain.formComponents.getMaterialTypeDataSource(),
-                        displayExpr: 'name',
+                        dataSource: this.lookupData.materialTypes || [],
+                        displayExpr: 'displayName',
                         valueExpr: 'id',
                         placeholder: 'Select Material Type',
+                        showClearButton: true,
                         onValueChanged: (e) => {
                             const selectedMaterialTypeId = e.value;
                             console.log('Selected Material Type ID:', selectedMaterialTypeId);
@@ -229,7 +258,9 @@ class NewMaterialItemsForm {
                             label: { text: 'Unit' },
                             editorType: 'dxSelectBox',
                             editorOptions: {
-                                dataSource: ['Piece', 'Box', 'Kg', 'Liter'],
+                                dataSource: this.lookupData.units || [],
+                                displayExpr: 'displayName',
+                                valueExpr: 'code',
                                 placeholder: 'Select Material Unit',
                                 stylingMode: 'filled',
                                 showClearButton: true,
@@ -239,6 +270,10 @@ class NewMaterialItemsForm {
                                     
                                     if (newValue && formData.itemUnit !== newValue) {
                                         this.update('itemUnit', newValue);
+                                    }
+
+                                    if(!e.value){
+                                        this.update('itemUnit', null);
                                     }
                                 }
                             },
@@ -312,7 +347,9 @@ class NewMaterialItemsForm {
                             label: { text: 'Unit' },
                             editorType: 'dxSelectBox',
                             editorOptions: {
-                                dataSource: ['Piece', 'Box', 'Kg', 'Liter'],
+                                dataSource: this.appForm.appMain.formComponents.getUnitDataSource(),
+                                displayExpr: 'displayName',
+                                valueExpr: 'code',
                                 placeholder: 'Select Item Unit',
                                 stylingMode: 'filled',
                                 showClearButton: true
@@ -377,6 +414,8 @@ class NewMaterialItemsForm {
                                 onValueChanged: (e) => {
                                     if (e.value !== null && e.value !== undefined) {
                                         calculateTHBUnitPrice();
+                                    }else{
+                                        this.update('thbUnitPrice', 0);
                                     }
                                 }
                             },
@@ -388,11 +427,9 @@ class NewMaterialItemsForm {
                             label: { text: 'Currency' },
                             editorType: 'dxSelectBox',
                             editorOptions: {
-                                dataSource: mockExchangeRates,
-                                displayExpr: (item) => {
-                                    return item ? `${item.currencyCode} (${item.rateToTHB.toFixed(4)})` : '';
-                                },
-                                valueExpr: 'currencyCode',
+                                dataSource: this.lookupData.exchangeRates || [],
+                                displayExpr: 'displayName',
+                                valueExpr: 'code',
                                 placeholder: 'Select Currency',
                                 stylingMode: 'filled',
                                 showClearButton: true,
@@ -404,6 +441,8 @@ class NewMaterialItemsForm {
                                         }
                                         
                                         calculateTHBUnitPrice();
+                                    }else{
+                                        this.update('thbUnitPrice', 0);
                                     }
                                 }
                             },
@@ -452,7 +491,9 @@ class NewMaterialItemsForm {
                             label: { text: 'Group of Goods' },
                             editorType: 'dxSelectBox',
                             editorOptions: {
-                                dataSource: ['Goods A', 'Goods B', 'Goods C'],
+                                dataSource: this.lookupData.groupOfGoods || [],
+                                displayExpr: 'displayName',
+                                valueExpr: 'name',
                                 placeholder: 'Select Group of Goods',
                                 stylingMode: 'filled',
                                 showClearButton: true
@@ -491,8 +532,7 @@ class NewMaterialItemsForm {
             if (this.validate().isValid) {
                 const formData = this.get();
                 console.log('New Material and Item Data:', formData);
-                alert('New Material and Item added successfully!');
-                this.reset();
+                this.appForm.appMain.onSubmitNewMaterialsItems(formData);
             }
         });
     }

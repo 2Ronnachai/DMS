@@ -169,8 +169,8 @@ class AppHeader{
                             },
                             editorType: 'dxSelectBox',
                             editorOptions: getEditorOptions({
-                                dataSource: [], // To be loaded dynamically
-                                displayExpr: 'name',
+                                dataSource: this.appMain.formComponents.getSupplierDataSource(),
+                                displayExpr: 'displayName',
                                 valueExpr: 'id',
                                 placeholder: 'Select Supplier',
                                 searchEnabled: true,
@@ -302,8 +302,6 @@ class AppHeader{
 
     _renderFileList($container) {
         const allFiles = this._getAllFiles();
-        console.log('Rendering file list with files:', allFiles);
-        
         if (this.fileListInstance) {
             this.fileListInstance.dispose();
         }
