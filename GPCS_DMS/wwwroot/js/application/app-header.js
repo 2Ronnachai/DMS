@@ -1,20 +1,17 @@
 class AppHeader{
-    constructor(appMain){
+    constructor(appMain, applicationData = null){
         this.appMain = appMain;
+        this.data = applicationData;
         this.container = document.getElementById('headerSection');
-        this.data = null;
+
         this.mode = null; // 'create', 'edit', 'view', 'approve'
 
+        // File attachment management
         this.pendingFiles = []; // For files added but not yet saved
         this.deletedFileIds = []; // For IDs of files marked for deletion
         this.fileListInstance = null;
-        this.formInstance = null;
-    }
 
-    setData(headerData){
-        console.log('Setting header data:', headerData);
-        this.data = headerData;
-        this.render();
+        this.formInstance = null;
     }
 
     render(){
@@ -73,7 +70,7 @@ class AppHeader{
         const formContainer = document.createElement('div');
         formContainer.className = 'header-form-container';
         formContainer.innerHTML = `
-            <divl class="card mb-3">
+            <divl class="card">
                 <div class="card-body">
                     <div id="headerFormElements"></div>
                 </div>
@@ -82,13 +79,19 @@ class AppHeader{
         this.container.append(formContainer);
         console.log('Data : ', this.data);
 
+        const getEditorOptions = (customOptions = {}) => {
+            return {
+                stylingMode: this.mode === 'view' ? 'outlined' : 'filled',
+                ...customOptions
+            };
+        };
+
         // DevExtreme Form Configuration
         const formConfig = {
             formData: this.data,
             labelLocation: 'left',
             showColonAfterLabel: false,
             readOnly: this.mode === 'view',
-            stylingMode: this.mode === 'view' ? 'outlined' : 'filled',
             colCount: 2,
             items: [
                 {
@@ -121,11 +124,7 @@ class AppHeader{
                                             align-items:baseline;
                                             gap:8px;
                                         ">
-                                            <span style="
-                                                font-size:18px;
-                                                font-weight:600;
-                                                color:#212121;
-                                            ">
+                                            <span class="header-application-type">
                                                 Information Request
                                             </span>
 
@@ -169,7 +168,7 @@ class AppHeader{
                                 text: 'Supplier',
                             },
                             editorType: 'dxSelectBox',
-                            editorOptions: {
+                            editorOptions: getEditorOptions({
                                 dataSource: [], // To be loaded dynamically
                                 displayExpr: 'name',
                                 valueExpr: 'id',
@@ -177,8 +176,7 @@ class AppHeader{
                                 searchEnabled: true,
                                 searchMode: 'contains',
                                 searchExpr: ['name', 'code'],
-                                stylingMode: 'outlined'
-                            },
+                            }),
                             validationRules: [{
                                 type: 'required',
                                 message: 'Please select a supplier'
@@ -192,12 +190,11 @@ class AppHeader{
                                 text: 'Effective Date',
                             },
                             editorType: 'dxDateBox',
-                            editorOptions: {
+                            editorOptions: getEditorOptions({
                                 displayFormat: this.appMain.getDateFormat(),
                                 placeholder: 'Select Effective Date',
-                                stylingMode: 'outlined',
                                 useMaskBehavior: true
-                            },
+                            }),
                             validationRules: [{
                                 type: 'required',
                                 message: 'Please select an effective date'
@@ -212,9 +209,9 @@ class AppHeader{
                                 cssClass: 'header-form-label'
                             },
                             editorType: 'dxCheckBox',
-                            editorOptions: {
+                            editorOptions: getEditorOptions({
                                 text: 'Urgent'
-                            },
+                            }),
                         },
                         // Requestor
                         {
@@ -247,10 +244,9 @@ class AppHeader{
                                 text: 'Quotation URL',
                             },
                             editorType: 'dxTextBox',
-                            editorOptions: {
+                            editorOptions: getEditorOptions({
                                 placeholder: 'https://example.com/quotation.pdf',
-                                stylingMode: 'outlined'
-                            },
+                            }),
                             validationRules: [{
                                 type: 'pattern',
                                 pattern: /^( https?:\/\/ )?.+/,
@@ -266,11 +262,10 @@ class AppHeader{
                                 text: 'Remark',
                             },
                             editorType: 'dxTextArea',
-                            editorOptions: {
+                            editorOptions: getEditorOptions({
                                 height: 80,
                                 placeholder: 'Enter additional remarks',
-                                stylingMode: 'outlined'
-                            },
+                            }),
                             colSpan: 2
                         },
 
@@ -588,11 +583,16 @@ class AppHeader{
         return true; // View mode always valid
     }
 
-    getData(){
+    get(){
         if(this.formInstance){
             return this.formInstance.option('formData');
         }
         return this.data;
+    }
+
+    update(data){
+        this.data = data;
+        this.render();
     }
 
     reset(){

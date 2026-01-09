@@ -3,6 +3,7 @@
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/application/app-header.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/application/app-workflow.css" asp-append-version="true" />
 }
 
 <div class="container">
@@ -13,12 +14,10 @@
         <div id="topActionButtons"></div>
 
         <!-- Header Section (Title + Info) -->
-        <div id="headerSection" class="mb-3"></div>
+        <div id="headerSection"></div>
         
         <!-- Form Section (Master Data) -->
-        <div id="formSection" class="card mb-3">
-            <div class="card-body"></div>
-        </div>
+        <div id="formSection"></div>
         
         <!-- Items Section (Grid/Table) -->
         <div id="itemsSection" class="card mb-3">
@@ -26,9 +25,7 @@
         </div>
 
         <!-- Workflow Section -->
-        <div id="workflowSection" class="card mb-3">
-            <div class="card-body"></div>
-        </div>
+        <div id="workflowSection"></div>
         
         <!-- Bottom Action Buttons -->
         <div id="bottomActionButtons"></div>
@@ -43,6 +40,13 @@
 
 @section Scripts {
     <script src="~/js/application/app-header.js"></script>
+    <script src="~/js/application/app-workflow.js"></script>
+    <script src="~/js/application/form/app-form.new-item.js"></script>
+    <script src="~/js/application/form/app-form.edit-item.js"></script>
+    <script src="~/js/application/form/app-form.delete-item.js"></script>
+    <script src="~/js/application/form/app-form.new-material-item.js"></script>
+    <script src="~/js/application/form/app-form.components.js"></script>
+    <script src="~/js/application/form/app-form.js"></script>
     <script src="~/js/application/app-button-handler.js"></script>
     <script src="~/js/application/app-button.js"></script>
     <script src="~/js/application/app-main.js"></script>

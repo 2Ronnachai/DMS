@@ -1,0 +1,529 @@
+class NewMaterialItemsForm {
+    constructor(appForm, container, applicationData = null) {
+        this.appForm = appForm;
+        this.container = container;
+        this.data = applicationData;
+
+        this.formInstance = null;
+    }
+
+    render() {
+        this.container.innerHTML = '';
+        this._renderForm();
+    }
+
+    _renderForm() {
+        const formContainer = document.createElement('div');
+        formContainer.className = 'material-form-and-items-form';
+        formContainer.innerHTML = `
+            <div class="category-material-selection mt-3">
+                <div id="newMaterialAndItemsForm"></div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="button" class="dialog-btn dialog-btn-cancel" id="resetBtn">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                    <button type="button" class="dialog-btn dialog-info dialog-btn-ok" id="addBtn">
+                        <i class="fas fa-plus"></i> Add Item
+                    </button>
+                </div>
+            </div>
+        `;
+        this.container.append(formContainer);
+
+        this._renderNewMaterialAndItemsForm();
+        this._renderButtons();
+    }
+
+    _renderNewMaterialAndItemsForm() {
+        const mockExchangeRates = [
+            { currencyCode: 'THB', rateToTHB: 1.0000 },
+            { currencyCode: 'USD', rateToTHB: 35.5000 },
+            { currencyCode: 'EUR', rateToTHB: 38.2500 },
+            { currencyCode: 'JPY', rateToTHB: 0.2400 },
+            { currencyCode: 'CNY', rateToTHB: 4.9500 },
+            { currencyCode: 'SGD', rateToTHB: 26.3000 }
+        ];
+
+        // Helper: Description Validation Rules
+        const getDescriptionValidationRules = (fieldName) => {
+            return [
+                {
+                    type: 'required',
+                    message: `${fieldName} is required`
+                },
+                {
+                    type: 'stringLength',
+                    min: 3,
+                    max: 50,
+                    message: 'Description must be between 3 and 50 characters'
+                },
+                {
+                    type: 'custom',
+                    validationCallback: (e) => {
+                        if (!e.value) return true;
+
+                        if (/['"]/.test(e.value)) {
+                            e.rule.message = 'Single quotes (\') and double quotes (") are not allowed';
+                            return false;
+                        }
+
+                        if (!/^[a-zA-Z0-9!%&()*\-./#:=@_ ]+$/.test(e.value)) {
+                            e.rule.message = 'Only letters, numbers and special characters (!%&()*-./#:=@_) are allowed';
+                            return false;
+                        }
+
+                        return true;
+                    }
+                }
+            ];
+        };
+
+        // Helper: Number Validation Rules
+        const getNumberValidationRules = (fieldName, isRequired = true, minValue = null, maxValue = null) => {
+            const rules = [];
+
+            if(isRequired){
+                rules.push({
+                    type: 'required',
+                    message: `${fieldName} is required`
+                });
+            }
+
+            if (minValue !== null && maxValue !== null) {
+                rules.push({
+                    type: 'numeric',
+                    message: `${fieldName} must be a valid number`
+                });
+                rules.push({
+                    type: 'range',
+                    min: minValue,
+                    max: maxValue,
+                    message: `${fieldName} must be between ${minValue} and ${maxValue}`
+                });
+            } else if (minValue !== null) {
+                rules.push({
+                    type: 'numeric',
+                    message: `${fieldName} must be a valid number`
+                });
+                rules.push({
+                    type: 'range',
+                    min: minValue,
+                    message: `${fieldName} must be at least ${minValue}`
+                });
+            } else if (maxValue !== null) {
+                rules.push({
+                    type: 'numeric',
+                    message: `${fieldName} must be a valid number`
+                });
+                rules.push({
+                    type: 'range',
+                    max: maxValue,
+                    message: `${fieldName} must be at most ${maxValue}`
+                });
+            }
+            return rules;
+        };
+
+        // Helper: Currency Format
+        const getCurrencyFormat = (currency = 'THB', precision = 4) => {
+            return {
+                type: 'fixedPoint',
+                precision: precision,
+                formatter: (value) => {
+                    if (value === null || value === undefined) return '';
+                    return `${value.toLocaleString('en-US', { 
+                        minimumFractionDigits: precision, 
+                        maximumFractionDigits: precision 
+                    })} ${currency}`;
+                }
+            };
+        };
+
+        // Helper: Calculated THB Unit Price
+        const calculateTHBUnitPrice = () => {
+            const formData = this.formInstance.option('formData');
+            const unitPrice = formData.unitPrice || 0;
+            const currency = formData.currency || 'THB';
+            const selectedRate = mockExchangeRates.find(r => r.currencyCode === currency);
+            if (selectedRate) {
+                const thbUnitPrice = unitPrice * selectedRate.rateToTHB;
+                this.update('thbUnitPrice', thbUnitPrice);
+            }
+        };
+
+        const formConfig = {
+            formData: {
+                minimunOrder: 1,
+                conversionRate: 1,
+                unitPrice: 0,
+                moq: 1,
+                lotSize: 1,
+                leadTime: 7,
+                quotationExpiryDate: new Date(),
+                THBUnitPrice: 0,
+                currency: 'THB'
+            },
+            labelLocation: 'top',
+            showColonAfterLabel: false,
+            colCount: 2,
+            items: [
+                {
+                    dataField: 'categoryId',
+                    label: { text: 'Category' },
+                    editorType: 'dxSelectBox',
+                    editorOptions: {
+                        dataSource: this.appForm.appMain.formComponents.getCategoryDataSource(),
+                        displayExpr: 'name',
+                        valueExpr: 'id',
+                        placeholder: 'Select Category',
+                        onValueChanged: (e) => {
+                            const selectedCategoryId = e.value;
+                            console.log('Selected Category ID:', selectedCategoryId);
+                        },
+                        stylingMode: 'filled'
+                    }
+                },
+                {
+                    dataField: 'materialTypeId',
+                    label: { text: 'Material Type' },
+                    editorType: 'dxSelectBox',
+                    editorOptions: {
+                        dataSource: this.appForm.appMain.formComponents.getMaterialTypeDataSource(),
+                        displayExpr: 'name',
+                        valueExpr: 'id',
+                        placeholder: 'Select Material Type',
+                        onValueChanged: (e) => {
+                            const selectedMaterialTypeId = e.value;
+                            console.log('Selected Material Type ID:', selectedMaterialTypeId);
+                        },
+                        stylingMode: 'filled'
+                    }
+                },
+                {
+                    itemType: 'empty',
+                    colSpan: 2,
+                    cssClass: 'form-divider',
+                },
+                {
+                    itemType: 'group', // Material Details Group
+                    colCount: 1,
+                    colSpan: 1,
+                    items: [
+                        {
+                            dataField: 'materialDescription',
+                            label: { text: 'Material Description' },
+                            editorType: 'dxTextBox',
+                            editorOptions: {
+                                placeholder: 'Enter Material Description',
+                                stylingMode: 'filled',
+                                showClearButton: true,
+                                onValueChanged: (e) => {
+                                    const newValue = e.value;
+                                    this.update('itemDescription', newValue);
+                                }
+                            },
+                            validationRules: getDescriptionValidationRules('Material Description')
+                        },
+                        {
+                            dataField: 'materialUnit',
+                            label: { text: 'Unit' },
+                            editorType: 'dxSelectBox',
+                            editorOptions: {
+                                dataSource: ['Piece', 'Box', 'Kg', 'Liter'],
+                                placeholder: 'Select Material Unit',
+                                stylingMode: 'filled',
+                                showClearButton: true,
+                                onValueChanged: (e) => {
+                                    const newValue = e.value;
+                                    const formData = this.formInstance.option('formData');
+                                    
+                                    if (newValue && formData.itemUnit !== newValue) {
+                                        this.update('itemUnit', newValue);
+                                    }
+                                }
+                            },
+                            validationRules: [
+                                {
+                                    type: 'required',
+                                    message: 'Material Unit is required'
+                                }
+                            ]
+                        },
+                        {
+                            // Calculated Field: with Unit Price * Conversion Rate
+                            dataField: 'thbUnitPrice',
+                            colSpan: 1,
+                            label: { text: 'THB Unit Price' },
+                            editorType: 'dxNumberBox',
+                            editorOptions: {
+                                readOnly: true,
+                                stylingMode: 'outlined',
+                                format: getCurrencyFormat('THB', 4)
+                            }
+                        },
+                        {
+                            dataField: 'minimunOrder',
+                            label: () => {
+                                return {
+                                    text: 'Minimum Order Quantity',
+                                    alignment: 'left'
+                                };
+                            },
+                            editorType: 'dxNumberBox',
+                            editorOptions: {
+                                min: 1,
+                                placeholder: 'Enter Minimum Order Quantity',
+                                stylingMode: 'filled',
+                                showClearButton: true
+                            },
+                            validationRules: getNumberValidationRules('Minimum Order Quantity', true, 1)
+                        },
+                        {
+                            dataField: 'costCenter',
+                            label: { text: 'Cost Center' },
+                            editorType: 'dxTextBox',
+                            editorOptions: {
+                                readOnly: true,
+                                stylingMode: 'outlined',
+                            }
+                        }
+                    ]
+                },
+                {
+                    itemType: 'group', // Items Details Group
+                    colCount: 4,
+                    colSpan: 1,
+                    items: [
+                        {
+                            dataField: 'itemDescription',
+                            colSpan: 4,
+                            label: { text: 'Item Description' },
+                            editorType: 'dxTextBox',
+                            editorOptions: {
+                                placeholder: 'Enter Item Description',
+                                stylingMode: 'filled',
+                                showClearButton: true
+                            },
+                            validationRules: getDescriptionValidationRules('Item Description')
+                        },
+                        {
+                            dataField: 'itemUnit',
+                            colSpan: 1,
+                            label: { text: 'Unit' },
+                            editorType: 'dxSelectBox',
+                            editorOptions: {
+                                dataSource: ['Piece', 'Box', 'Kg', 'Liter'],
+                                placeholder: 'Select Item Unit',
+                                stylingMode: 'filled',
+                                showClearButton: true
+                            },
+                            validationRules: [
+                                {
+                                    type: 'required',
+                                    message: 'Item Unit is required'
+                                }
+                            ]
+                        },
+                        {
+                            dataField: 'conversionRate',
+                            colSpan: 1,
+                            label: { text: 'Conversion Rate' },
+                            editorType: 'dxNumberBox',
+                            editorOptions: {
+                                min: 1,
+                                placeholder: 'Enter Conversion Rate',
+                                stylingMode: 'filled',
+                                showClearButton: true
+                            },
+                            validationRules: getNumberValidationRules('Conversion Rate', true, 1)
+                        },
+                        {
+                            dataField: 'moq',
+                            colSpan: 1,
+                            label: { text: 'MOQ' },
+                            editorType: 'dxNumberBox',
+                            editorOptions: {
+                                min: 1,
+                                placeholder: 'Enter MOQ',
+                                stylingMode: 'filled',
+                                showClearButton: true
+                            },
+                            validationRules: getNumberValidationRules('MOQ', true, 1)
+                        },
+                        {
+                            dataField: 'lotSize',
+                            colSpan: 1,
+                            label: { text: 'Lot Size' },
+                            editorType: 'dxNumberBox',
+                            editorOptions: {
+                                min: 1,
+                                placeholder: 'Enter Lot Size',
+                                stylingMode: 'filled',
+                                showClearButton: true
+                            },
+                            validationRules: getNumberValidationRules('Lot Size', true, 1)
+                        },
+                        {
+                            dataField: 'unitPrice',
+                            colSpan: 2,
+                            label: { text: 'Unit Price' },
+                            editorType: 'dxNumberBox',
+                            editorOptions: {
+                                min: 0.0001,
+                                placeholder: 'Enter Unit Price',
+                                stylingMode: 'filled',
+                                showClearButton: true,
+                                format: getCurrencyFormat('THB', 4),
+                                onValueChanged: (e) => {
+                                    if (e.value !== null && e.value !== undefined) {
+                                        calculateTHBUnitPrice();
+                                    }
+                                }
+                            },
+                            validationRules: getNumberValidationRules('Unit Price', true, 0.0001)
+                        },
+                        {
+                            dataField: 'currency',
+                            colSpan: 2,
+                            label: { text: 'Currency' },
+                            editorType: 'dxSelectBox',
+                            editorOptions: {
+                                dataSource: mockExchangeRates,
+                                displayExpr: (item) => {
+                                    return item ? `${item.currencyCode} (${item.rateToTHB.toFixed(4)})` : '';
+                                },
+                                valueExpr: 'currencyCode',
+                                placeholder: 'Select Currency',
+                                stylingMode: 'filled',
+                                showClearButton: true,
+                                onValueChanged: (e) => {
+                                    if (e.value) {
+                                        const unitPriceEditor = this.formInstance.getEditor('unitPrice');
+                                        if (unitPriceEditor) {
+                                            unitPriceEditor.option('format', getCurrencyFormat(e.value, 4));
+                                        }
+                                        
+                                        calculateTHBUnitPrice();
+                                    }
+                                }
+                            },
+                            validationRules: [
+                                {
+                                    type: 'required',
+                                    message: 'Currency is required'
+                                }
+                            ]
+                        },
+                        {
+                            dataField: 'quotationExpiryDate',
+                            colSpan: 2,
+                            label: { text: 'Quotation Expiry Date' },
+                            editorType: 'dxDateBox',
+                            editorOptions: {
+                                type: 'date',
+                                placeholder: 'Select Quotation Expiry Date',
+                                stylingMode: 'filled',
+                                showClearButton: true,
+                                displayFormat: this.appForm.appMain.getDateFormat()
+                            }
+                        },
+                        {
+                            dataField: 'leadTime',
+                            colSpan: 2,
+                            label: { text: 'Lead Time (Days)' },
+                            editorType: 'dxSelectBox',
+                            editorOptions: {
+                                dataSource: [7, 14, 30, 60, 90, 120, 150, 180],
+                                placeholder: 'Select or Enter Lead Time',
+                                stylingMode: 'filled',
+                                showClearButton: true,
+                                acceptCustomValue: true, 
+                                onCustomItemCreating: (e) => {
+                                    const num = parseInt(e.text);
+                                    e.customItem = (!isNaN(num) && num >= 1) ? num : null;
+                                }
+                            },
+                            validationRules: getNumberValidationRules('Lead Time', true, 1)
+                        },
+
+                        {
+                            dataField: 'groupOfGoods',
+                            colSpan: 4,
+                            label: { text: 'Group of Goods' },
+                            editorType: 'dxSelectBox',
+                            editorOptions: {
+                                dataSource: ['Goods A', 'Goods B', 'Goods C'],
+                                placeholder: 'Select Group of Goods',
+                                stylingMode: 'filled',
+                                showClearButton: true
+                            },
+                            validationRules: [
+                                {
+                                    type: 'required',
+                                    message: 'Group of Goods is required'
+                                }
+                            ]
+                        }
+                    ]
+                },
+            ]
+        };
+
+        const selectionFormContainer = this.container.querySelector('#newMaterialAndItemsForm');
+        this.formInstance = $(selectionFormContainer).dxForm(formConfig).dxForm('instance');
+    }
+
+    _renderButtons() {
+        this.container.querySelector('#resetBtn').addEventListener('click', () => {
+            this.appForm.appMain.dialog.confirm({
+                    title: 'Confirm Reset',
+                    message: 'Are you sure you want to reset the form?',
+                    okText: 'Reset',
+                    type: 'warning'
+                }).then((confirmed) => {
+                    if (confirmed) {
+                        this.reset();
+                    }
+                });
+        });
+        
+        this.container.querySelector('#addBtn').addEventListener('click', () => {
+            if (this.validate().isValid) {
+                const formData = this.get();
+                console.log('New Material and Item Data:', formData);
+                alert('New Material and Item added successfully!');
+                this.reset();
+            }
+        });
+    }
+
+    update(fieldName, value) {
+        if (this.formInstance) {
+            this.formInstance.updateData(fieldName, value);
+        }
+    }
+
+    get() {
+        if (this.formInstance) {
+            return this.formInstance.option('formData');
+        }
+    }
+
+    set(data) {
+        if (this.formInstance) {
+            this.formInstance.option('formData', data);
+        }
+    }
+
+    reset() {
+        if (this.formInstance) {
+            this.formInstance.reset();
+        }
+    }
+
+    validate() {
+        if (this.formInstance) {
+            return this.formInstance.validate();
+        }
+    }
+}

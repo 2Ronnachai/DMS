@@ -8,19 +8,28 @@ class AppMain {
         this.loading = appLoading;
         this.notification = appNotification;
 
+        // Application configuration
         this.applicationType = config.applicationType;
         this.applicationId = config.applicationId;
-        this.mode = null; // 'create', 'edit', 'view', 'approve'
-        this.userRole = null; // 'applicant', 'approver', 'admin', etc.
 
-        this.permissions = null; // To be loaded based on user role and application type
+        // Application state
+        this.mode = null; // 'create', 'edit', 'view', 'approve'
         this.avaiableActions = []; // To be determined based on permissions and application state
 
         // Managers
+        this.form = null;
+        this.formComponents = null;
+        this.header = null;
+        this.workflow = null;
         this.actionHandler = null;
-        this.header = new AppHeader(this);
+        this.actionButtons = null;
 
-         this.endpoints ={
+        // Application data
+        this.permissions = null; // To be loaded based on user role and application type
+        this.applicationData = null;
+
+        // API Endpoints
+        this.endpoints ={
             loadPermissions: `applications/has-permission/`,
             loadHeaderData: (type) => `applications/workflow/${type}`,
         };
@@ -90,9 +99,7 @@ class AppMain {
             const response = await this.http.get(this.endpoints.loadPermissions + `${this.applicationId || ''}`);
             if(response && response.success){
                 this.permissions = response.data;
-                // Determine mode and available actions based on permissions
-                this.mode = this.permissions.mode; // e.g., 'create', 'edit', 'view', 'approve'
-                this.avaiableActions = this.permissions.availableActions; // e.g., ['save', 'submit', 'approve']
+                this._determineModeAndActions();
                 console.log('Permissions loaded:', this.permissions);
             }else{
                 throw new Error('Failed to load permissions from server.');
@@ -106,14 +113,18 @@ class AppMain {
         }
     }
 
+    _determineModeAndActions(){
+        // Logic to determine mode and available actions based on permissions
+        this.mode = this.permissions.mode; // e.g., 'create', 'edit', 'view', 'approve'
+        this.avaiableActions = this.permissions.availableActions; // e.g., ['save', 'submit', 'approve']
+    }
+
     async _loadApplicationData(){
         if(this.applicationType && !this.applicationId){
             try{
                 const response = await this.http.get(this.endpoints.loadHeaderData(this.applicationType));
                 if(response && response.success){
                     this.applicationData = response.data ? response.data : response;
-                    this.header.setData(this.applicationData);
-                    console.log('Application data loaded:', this.applicationData);
                 }else{
                     throw new Error('Failed to load application data from server.');
                 }
@@ -134,10 +145,45 @@ class AppMain {
         // Initialize action buttons
         this.actionButtons = new AppButton(this);
         this.actionButtons.render();
+
+        // Initialize header module
+        this.header = new AppHeader(this, this.applicationData);
+        this.header.render();
+
+        // Initialize form module
+        this.formComponents = new AppFormComponents(this);
+        this.form = new AppForm(this, this.applicationData);
+        this.form.render();
+
+        // Initialize workflow module
+        this.workflow = new AppWorkflow(this, this.applicationData);
+        this.workflow.render();
     }
 
     async reload(){
-        await this._loadPermissions();
-        this.actionButtons.update();
+        try{
+            const loadingId = this.loading.show('Reloading...');
+            await this._loadInitialData();
+
+            this.actionButtons.update();
+            this.header.update(this.applicationData);
+            this.workflow.update(this.applicationData);
+
+            this.loading.hide(loadingId);
+            this.notification.success('Reloaded successfully.');
+        }catch(error){
+            this.loading.hide();
+            this.notification.error('Reload failed: ' + error.message);
+        }
+    }
+
+    getApplicationTypeDisplayName(){
+        const typeMap = {
+            'newmaterialsitems': 'New Materials & Items',
+            'newitem': 'New Item',
+            'edititem': 'Edit Item',
+            'deleteitem': 'Delete Item'
+        };
+        return typeMap[this.applicationType.toLowerCase()] || 'Application';
     }
 }

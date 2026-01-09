@@ -38,3 +38,21 @@
     border-radius: 4px;
     padding: 12px;
 }
+
+.header-application-type{
+    font-size:18px;
+    font-weight:600;
+    color:#212121;
+}
+
+.custom-group-header .dx-form-group-caption {
+    font-weight:600;
+    color: #212121;
+    font-size: 18px;
+}
+
+.form-divider {
+    border-bottom: 1px solid #dee2e6;
+    margin: 16px 0;
+    height: 1px;
+}
