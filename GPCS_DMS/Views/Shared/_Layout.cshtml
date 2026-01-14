@@ -23,7 +23,11 @@
 
     <script>
         window.APP_CONFIG = {
-            baseUrl: "@Configuration["ApiSettings:BaseUrl"]"
+            baseUrl: "@Configuration["ApiSettings:BaseUrl"]",
+            qcsUrl: {
+                view: "@Configuration["ApiSettings:QCSUrl:View"]",
+                service: "@Configuration["ApiSettings:QCSUrl:Service"]"
+            }
         };
 
         if(!window.APP_CONFIG.baseUrl){

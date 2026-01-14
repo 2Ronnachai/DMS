@@ -56,3 +56,44 @@
     margin: 16px 0;
     height: 1px;
 }
+
+.file-upload-section.validation-error {
+    border: 1px solid #d9534f;
+    border-radius: 4px;
+    padding: 8px;
+    animation: shake 0.3s;
+    transition: all 0.3s ease;
+    background-color: #f2dede;
+}
+
+.file-section-error {
+    color: #d32f2f;
+    font-size: 12px;
+    padding: 8px 12px;
+    background-color: #fff;
+    border-radius: 4px;
+    border-left: 3px solid #d32f2f;
+}
+
+.quotation-action-btn {
+    color: #999 !important;
+}
+
+.quotation-action-btn:hover {
+    color: #666 !important;
+}
+
+.quotation-action-btn .dx-icon {
+    color: #999 !important;
+}
+
+.quotation-action-btn:hover .dx-icon {
+    color: #666 !important;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+

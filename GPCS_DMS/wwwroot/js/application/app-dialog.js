@@ -10,6 +10,7 @@ class AppDialog {
         
         AppDialog.instance = this;
         this.activeDialog = null;
+        this.isAnimated = false;
         this.config = {
             animationDuration: 250,
             closeOnOverlayClick: true,
@@ -23,6 +24,11 @@ class AppDialog {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.config.closeOnEscape && this.activeDialog) {
                 this._handleCancel();
+            }
+
+            if (e.key === 'Enter' && this.isAnimated){
+                e.preventDefault();
+                e.stopPropagation();
             }
         });
     }
@@ -66,6 +72,26 @@ class AppDialog {
         });
     }
 
+    prompt(options = {}) {
+        return new Promise((resolve) => {
+            const config = {
+                title: 'Comment',
+                message: 'Please enter your comment:',
+                type: 'confirm',
+                okText: 'OK',
+                cancelText: 'Cancel',
+                showCancel: true,
+                placeholder: 'Enter your comment here...',
+                required: false,
+                rows: 4,
+                hasTextarea: true,
+                ...options
+            };
+
+            this._show(config, resolve);
+        });
+    }
+
     /**
      * Show custom dialog
      */
@@ -80,6 +106,8 @@ class AppDialog {
         if (this.activeDialog) {
             this._close(false);
         }
+
+        this.isAnimated = true;
 
         // Create overlay
         const overlay = document.createElement('div');
@@ -105,7 +133,17 @@ class AppDialog {
             
             <div class="dialog-body">
                 ${config.icon ? `<div class="dialog-icon">${this._getIcon(config.type)}</div>` : ''}
-                <div class="dialog-message">${config.message}</div>
+                <div class="dialog-content">
+                    <div class="dialog-message">${config.message}</div>
+                    ${config.hasTextarea ? `
+                        <textarea 
+                            class="dialog-textarea" 
+                            placeholder="${config.placeholder || ''}"
+                            rows="${config.rows || 4}"
+                            ${config.required ? 'required' : ''}
+                        ></textarea>
+                    ` : ''}
+                </div>
             </div>
             
             <div class="dialog-footer">
@@ -123,12 +161,15 @@ class AppDialog {
         overlay.appendChild(dialog);
         document.body.appendChild(overlay);
 
+        const textarea = dialog.querySelector('.dialog-textarea');
+
         // Store reference
         this.activeDialog = {
             overlay,
             dialog,
             resolve,
-            config
+            config,
+            textarea
         };
 
         // Bind button events
@@ -144,23 +185,51 @@ class AppDialog {
             dialog.classList.add('show');
         });
 
-        // Focus OK button
+        // Focus textarea or OK button
         setTimeout(() => {
-            dialog.querySelector('[data-action="ok"]').focus();
+            if (textarea) {
+                textarea.focus();
+            } else {
+                dialog.querySelector('[data-action="ok"]').focus();
+            }
+            this.isAnimated = false;
         }, this.config.animationDuration);
     }
 
     _handleOk() {
-        this._close(true);
+        if (!this.activeDialog || this.isAnimated) return;
+
+        const { textarea, config } = this.activeDialog;
+        
+        // If has textarea, validate and return value
+        if (textarea) {
+            const value = textarea.value.trim();
+            
+            // Check required
+            if (config.required && !value) {
+                textarea.classList.add('error');
+                textarea.focus();
+                setTimeout(() => textarea.classList.remove('error'), 500);
+                return;
+            }
+            
+            this._close(value);
+        } else {
+            this._close(true);
+        }
     }
 
     _handleCancel() {
-        this._close(false);
+        if(this.isAnimated) return;
+
+        const { textarea } = this.activeDialog || {};
+        this._close(textarea ? null : false);
     }
 
     _close(result) {
-        if (!this.activeDialog) return;
+        if (!this.activeDialog || this.isAnimated) return;
 
+        this.isAnimated = true;
         const { overlay, dialog, resolve } = this.activeDialog;
 
         // Remove show class
@@ -173,6 +242,7 @@ class AppDialog {
                 overlay.parentNode.removeChild(overlay);
             }
             this.activeDialog = null;
+            this.isAnimated = false;
             resolve(result);
         }, this.config.animationDuration);
     }

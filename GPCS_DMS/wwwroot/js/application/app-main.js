@@ -18,6 +18,7 @@ class AppMain {
 
         // Managers
         this.form = null;
+        this.grid = null;
         this.formComponents = null;
         this.header = null;
         this.workflow = null;
@@ -35,11 +36,14 @@ class AppMain {
             lookups:{
                 units : 'units/lookups/',
                 suppliers : 'suppliers/lookups/',
-                categories : 'categories/lookups/',
+                categories : 'categories/lookups-purchaser/',
                 exchangeRates : 'exchangerates/lookups/',
                 groupOfGoods : 'groupofgoods/lookups/',
                 materialTypes : 'materialtypes/lookups/',
-                supplierPurchasers : 'supplierPurchasers/lookups/'
+                supplierPurchasers : 'supplierPurchasers/supplier-purchaser/'
+            },
+            applications:{
+                save: 'applications/save/',
             }
         };
 
@@ -158,11 +162,17 @@ class AppMain {
 
         // Initialize header module
         this.header = new AppHeader(this, this.applicationData);
-        this.header.render();
+        await this.header.render();
 
         // Initialize form module
-        this.form = new AppForm(this, this.applicationData);
-        await this.form.render();
+        // Only Create mode and Edit mode require form initialization
+        if(this.mode === 'create' || this.mode === 'edit'){
+            this.form = new AppForm(this, this.applicationData);
+            await this.form.render();
+        }
+
+        this.grid = new AppGrid(this, this.applicationData);
+        await this.grid.render();
 
         // Initialize workflow module
         this.workflow = new AppWorkflow(this, this.applicationData);
@@ -199,6 +209,7 @@ class AppMain {
     onSubmitNewMaterialsItems(data){
         // Handle submission logic for New Materials & Items
         // Add to datagrid in items section
+        this.grid.addItems([data]);
         console.log('Submitted New Materials & Items:', data);
     }
 

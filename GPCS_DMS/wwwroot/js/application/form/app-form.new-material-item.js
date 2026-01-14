@@ -8,17 +8,17 @@ class NewMaterialItemsForm {
     }
 
     async render() {
-        try{
+        try {
             await this._loadLookupDataSources();
             this.container.innerHTML = '';
             this._renderForm();
-        }catch(error){
+        } catch (error) {
             console.error('Error rendering NewMaterialItemsForm:', error);
         }
     }
 
     async _loadLookupDataSources() {
-        let [categories , materialTypes, units, exchangeRates, groupOfGoods] = await Promise.all([
+        let [categories, materialTypes, units, exchangeRates, groupOfGoods] = await Promise.all([
             this.appForm.appMain.formComponents.getCategoryDataSource(),
             this.appForm.appMain.formComponents.getMaterialTypeDataSource(),
             this.appForm.appMain.formComponents.getUnitDataSource(),
@@ -27,7 +27,7 @@ class NewMaterialItemsForm {
         ]);
 
         // Default Lookup Data
-        if(!exchangeRates || exchangeRates.length === 0){
+        if (!exchangeRates || exchangeRates.length === 0) {
             exchangeRates = [{ id: 'THB', code: 'THB', displayName: 'THB (1.0000)', rateToTHB: 1 }];
         }
 
@@ -101,7 +101,7 @@ class NewMaterialItemsForm {
         const getNumberValidationRules = (fieldName, isRequired = true, minValue = null, maxValue = null) => {
             const rules = [];
 
-            if(isRequired){
+            if (isRequired) {
                 rules.push({
                     type: 'required',
                     message: `${fieldName} is required`
@@ -150,24 +150,26 @@ class NewMaterialItemsForm {
                 precision: precision,
                 formatter: (value) => {
                     if (value === null || value === undefined) return '';
-                    return `${value.toLocaleString('en-US', { 
-                        minimumFractionDigits: precision, 
-                        maximumFractionDigits: precision 
+                    return `${value.toLocaleString('en-US', {
+                        minimumFractionDigits: precision,
+                        maximumFractionDigits: precision
                     })} ${currency}`;
                 }
             };
         };
 
+        let calculateTimeout = null;
+
         // Helper: Calculated THB Unit Price
         const calculateTHBUnitPrice = async () => {
             const formData = this.formInstance.option('formData');
-            const unitPrice = formData.unitPrice || 0;
+            const itemUnitPrice = formData.itemUnitPrice || 0;
             const currency = formData.currency || 'THB';
             const exchangeRates = this.lookupData.exchangeRates || [];
             const selectedRate = exchangeRates.find(r => r.code === currency);
             if (selectedRate) {
-                const thbUnitPrice = unitPrice * selectedRate.rateToTHB;
-                this.update('thbUnitPrice', thbUnitPrice);
+                const thbUnitPrice = itemUnitPrice * selectedRate.rateToTHB;
+                this.update('materialUnitPrice', thbUnitPrice);
             }
         };
 
@@ -175,13 +177,14 @@ class NewMaterialItemsForm {
             formData: {
                 minimunOrder: 1,
                 conversionRate: 1,
-                unitPrice: 0,
+                itemUnitPrice: 0,
                 moq: 1,
                 lotSize: 1,
                 leadTime: 7,
                 quotationExpiryDate: new Date(),
-                THBUnitPrice: 0,
-                currency: 'THB'
+                materialUnitPrice: 0,
+                currency: 'THB',
+                groupOfGoods: 1
             },
             labelLocation: 'top',
             showColonAfterLabel: false,
@@ -192,41 +195,63 @@ class NewMaterialItemsForm {
                     label: { text: 'Category' },
                     editorType: 'dxSelectBox',
                     editorOptions: {
-                        dataSource: this.lookupData.categories || [],
+                        dataSource: {
+                            store: this.lookupData.categories || [],
+                            paginate: true,
+                            pageSize: 20
+                        },
                         displayExpr: 'displayName',
                         valueExpr: 'id',
                         placeholder: 'Select Category',
+                        searchEnabled: true,
                         showClearButton: true,
                         onValueChanged: (e) => {
-                            if(e.value){
+                            if (e.value) {
                                 const selectedCategory = this.lookupData.categories.find(cat => cat.id === e.value);
                                 console.log('Selected Category:', selectedCategory);
-                                if(selectedCategory){
+                                if (selectedCategory) {
                                     this.update('costCenter', selectedCategory.costCenter);
                                 }
-                            }else{
+                            } else {
                                 this.update('costCenter', null);
                             }
                         },
                         stylingMode: 'filled'
-                    }
+                    },
+                    validationRules: [
+                        {
+                            type: 'required',
+                            message: 'Category is required'
+                        }
+                    ]
                 },
                 {
                     dataField: 'materialTypeId',
                     label: { text: 'Material Type' },
                     editorType: 'dxSelectBox',
                     editorOptions: {
-                        dataSource: this.lookupData.materialTypes || [],
+                        dataSource: {
+                            store: this.lookupData.materialTypes || [],
+                            paginate: true,
+                            pageSize: 20
+                        },
                         displayExpr: 'displayName',
                         valueExpr: 'id',
                         placeholder: 'Select Material Type',
+                        searchEnabled: true,
                         showClearButton: true,
                         onValueChanged: (e) => {
                             const selectedMaterialTypeId = e.value;
                             console.log('Selected Material Type ID:', selectedMaterialTypeId);
                         },
                         stylingMode: 'filled'
-                    }
+                    },
+                    validationRules: [
+                        {
+                            type: 'required',
+                            message: 'Material Type is required'
+                        }
+                    ]
                 },
                 {
                     itemType: 'empty',
@@ -258,21 +283,26 @@ class NewMaterialItemsForm {
                             label: { text: 'Unit' },
                             editorType: 'dxSelectBox',
                             editorOptions: {
-                                dataSource: this.lookupData.units || [],
+                                dataSource: {
+                                    store: this.lookupData.units || [],
+                                    paginate: true,
+                                    pageSize: 20
+                                },
                                 displayExpr: 'displayName',
                                 valueExpr: 'code',
                                 placeholder: 'Select Material Unit',
                                 stylingMode: 'filled',
+                                searchEnabled: true,
                                 showClearButton: true,
                                 onValueChanged: (e) => {
                                     const newValue = e.value;
                                     const formData = this.formInstance.option('formData');
-                                    
+
                                     if (newValue && formData.itemUnit !== newValue) {
                                         this.update('itemUnit', newValue);
                                     }
 
-                                    if(!e.value){
+                                    if (!e.value) {
                                         this.update('itemUnit', null);
                                     }
                                 }
@@ -286,9 +316,9 @@ class NewMaterialItemsForm {
                         },
                         {
                             // Calculated Field: with Unit Price * Conversion Rate
-                            dataField: 'thbUnitPrice',
+                            dataField: 'materialUnitPrice',
                             colSpan: 1,
-                            label: { text: 'THB Unit Price' },
+                            label: { text: 'Unit Price (THB)' },
                             editorType: 'dxNumberBox',
                             editorOptions: {
                                 readOnly: true,
@@ -347,12 +377,17 @@ class NewMaterialItemsForm {
                             label: { text: 'Unit' },
                             editorType: 'dxSelectBox',
                             editorOptions: {
-                                dataSource: this.appForm.appMain.formComponents.getUnitDataSource(),
-                                displayExpr: 'displayName',
+                                dataSource: {
+                                    store: this.lookupData.units || [],
+                                    paginate: true,
+                                    pageSize: 20
+                                },
+                                displayExpr: 'code',
                                 valueExpr: 'code',
                                 placeholder: 'Select Item Unit',
                                 stylingMode: 'filled',
-                                showClearButton: true
+                                searchEnabled: true,
+                                showClearButton: true,
                             },
                             validationRules: [
                                 {
@@ -401,7 +436,7 @@ class NewMaterialItemsForm {
                             validationRules: getNumberValidationRules('Lot Size', true, 1)
                         },
                         {
-                            dataField: 'unitPrice',
+                            dataField: 'itemUnitPrice',
                             colSpan: 2,
                             label: { text: 'Unit Price' },
                             editorType: 'dxNumberBox',
@@ -412,11 +447,16 @@ class NewMaterialItemsForm {
                                 showClearButton: true,
                                 format: getCurrencyFormat('THB', 4),
                                 onValueChanged: (e) => {
-                                    if (e.value !== null && e.value !== undefined) {
-                                        calculateTHBUnitPrice();
-                                    }else{
-                                        this.update('thbUnitPrice', 0);
+                                    if (calculateTimeout) {
+                                        clearTimeout(calculateTimeout);
                                     }
+                                    calculateTimeout = setTimeout(() => {
+                                        if (e.value !== null && e.value !== undefined) {
+                                            calculateTHBUnitPrice();
+                                        } else {
+                                            this.update('materialUnitPrice', 0);
+                                        }
+                                    }, 300);
                                 }
                             },
                             validationRules: getNumberValidationRules('Unit Price', true, 0.0001)
@@ -427,22 +467,27 @@ class NewMaterialItemsForm {
                             label: { text: 'Currency' },
                             editorType: 'dxSelectBox',
                             editorOptions: {
-                                dataSource: this.lookupData.exchangeRates || [],
+                                dataSource: {
+                                    store: this.lookupData.exchangeRates || [],
+                                    paginate: true,
+                                    pageSize: 20
+                                },
                                 displayExpr: 'displayName',
                                 valueExpr: 'code',
                                 placeholder: 'Select Currency',
                                 stylingMode: 'filled',
+                                searchEnabled: true,
                                 showClearButton: true,
                                 onValueChanged: (e) => {
                                     if (e.value) {
-                                        const unitPriceEditor = this.formInstance.getEditor('unitPrice');
+                                        const unitPriceEditor = this.formInstance.getEditor('itemUnitPrice');
                                         if (unitPriceEditor) {
                                             unitPriceEditor.option('format', getCurrencyFormat(e.value, 4));
                                         }
-                                        
+
                                         calculateTHBUnitPrice();
-                                    }else{
-                                        this.update('thbUnitPrice', 0);
+                                    } else {
+                                        this.update('materialUnitPrice', 0);
                                     }
                                 }
                             },
@@ -463,8 +508,34 @@ class NewMaterialItemsForm {
                                 placeholder: 'Select Quotation Expiry Date',
                                 stylingMode: 'filled',
                                 showClearButton: true,
-                                displayFormat: this.appForm.appMain.getDateFormat()
-                            }
+                                displayFormat: this.appForm.appMain.getDateFormat(),
+                                onEnterKey: (e) => {
+                                    const inputValue = e.component._input().val();
+                                    const days = parseInt(inputValue);
+                                    
+                                    if (!isNaN(days) && days > 0) {
+                                        const newDate = new Date();
+                                        newDate.setDate(newDate.getDate() + days);
+                                        e.component.option('value', newDate);
+                                    }
+                                },
+                                onFocusOut: (e) => {
+                                    const inputValue = e.component._input().val();
+                                    const days = parseInt(inputValue);
+                                    
+                                    if (!isNaN(days) && days > 0 && inputValue === days.toString()) {
+                                        const newDate = new Date();
+                                        newDate.setDate(newDate.getDate() + days);
+                                        e.component.option('value', newDate);
+                                    }
+                                }
+                            },
+                            validationRules: [
+                                {
+                                    type: 'required',
+                                    message: 'Quotation Expiry Date is required'
+                                }
+                            ]
                         },
                         {
                             dataField: 'leadTime',
@@ -476,7 +547,7 @@ class NewMaterialItemsForm {
                                 placeholder: 'Select or Enter Lead Time',
                                 stylingMode: 'filled',
                                 showClearButton: true,
-                                acceptCustomValue: true, 
+                                acceptCustomValue: true,
                                 onCustomItemCreating: (e) => {
                                     const num = parseInt(e.text);
                                     e.customItem = (!isNaN(num) && num >= 1) ? num : null;
@@ -484,7 +555,6 @@ class NewMaterialItemsForm {
                             },
                             validationRules: getNumberValidationRules('Lead Time', true, 1)
                         },
-
                         {
                             dataField: 'groupOfGoods',
                             colSpan: 4,
@@ -493,10 +563,11 @@ class NewMaterialItemsForm {
                             editorOptions: {
                                 dataSource: this.lookupData.groupOfGoods || [],
                                 displayExpr: 'displayName',
-                                valueExpr: 'name',
+                                valueExpr: 'id',
                                 placeholder: 'Select Group of Goods',
                                 stylingMode: 'filled',
-                                showClearButton: true
+                                showClearButton: true,
+                                searchEnabled: true
                             },
                             validationRules: [
                                 {
@@ -517,24 +588,53 @@ class NewMaterialItemsForm {
     _renderButtons() {
         this.container.querySelector('#resetBtn').addEventListener('click', () => {
             this.appForm.appMain.dialog.confirm({
-                    title: 'Confirm Reset',
-                    message: 'Are you sure you want to reset the form?',
-                    okText: 'Reset',
-                    type: 'warning'
-                }).then((confirmed) => {
-                    if (confirmed) {
-                        this.reset();
-                    }
-                });
+                title: 'Confirm Reset',
+                message: 'Are you sure you want to reset the form?',
+                okText: 'Reset',
+                type: 'warning'
+            }).then((confirmed) => {
+                if (confirmed) {
+                    this.reset();
+                }
+            });
         });
-        
+
         this.container.querySelector('#addBtn').addEventListener('click', () => {
             if (this.validate().isValid) {
-                const formData = this.get();
-                console.log('New Material and Item Data:', formData);
+                const formData = this.prepareDataForSubmission();
                 this.appForm.appMain.onSubmitNewMaterialsItems(formData);
             }
         });
+    }
+
+    prepareDataForSubmission() {
+        const formData = this.get();
+        console.log('Before preparation, data is:', formData);
+        // For example, format dates, convert types, etc.
+        const preparedData = {
+            categoryId: formData.categoryId,
+            materialTypeId: formData.materialTypeId,
+            materialDescription: formData.materialDescription,
+            materialUnit: formData.materialUnit,
+            materialUnitPrice: formData.materialUnitPrice,
+            minimunOrder: formData.minimunOrder,
+            costCenter: formData.costCenter,
+            item: {
+                itemDescription: formData.itemDescription,
+                itemUnit: formData.itemUnit,
+                itemUnitPrice: formData.itemUnitPrice,
+                moq: formData.moq,
+                lotSize: formData.lotSize,
+                currency: formData.currency,
+                conversionRate: formData.conversionRate,
+                leadTime: formData.leadTime,
+                quotationExpiryDate: formData.quotationExpiryDate,
+                groupOfGoods: formData.groupOfGoods
+            }
+        };
+
+        console.log('After preparation, data is:', preparedData);
+        return preparedData;
     }
 
     update(fieldName, value) {

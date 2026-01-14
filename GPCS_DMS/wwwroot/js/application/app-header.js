@@ -1,5 +1,5 @@
-class AppHeader{
-    constructor(appMain, applicationData = null){
+class AppHeader {
+    constructor(appMain, applicationData = null) {
         this.appMain = appMain;
         this.data = applicationData;
         this.container = document.getElementById('headerSection');
@@ -12,35 +12,59 @@ class AppHeader{
         this.fileListInstance = null;
 
         this.formInstance = null;
+
+        this.quotationSelector = new AppHeaderPopup(appMain);
+
+        this.isUpdatingFromQuotation = false;
+        this.isUpdatingFromSupplier = false;
+
+        this.options = {
+            requireAttachment: true,
+            showAttachment: true,
+            minAttachments: 1,
+            maxAttachments: null,
+            attachmentLabel: 'File Attachments',
+            ...this.options,
+        };
     }
 
-    render(){
-        if(!this.container || !this.data) return;
+    async render() {
+        if (!this.container || !this.data) return;
 
         // Determine render mode based on appMain.mode
         this.mode = (this.appMain.mode === 'create' || this.appMain.mode === 'edit') ? 'form' : 'view';
 
+        this._getOptionsWithApplicationType();
+
         // Clear container
         this.container.innerHTML = '';
+        await this._renderForm();
+    }
 
-        this._renderForm();
+    _getOptionsWithApplicationType() {
+        const appType = this.appMain.applicationType?.toLowerCase();
+        if (appType === 'deleteitem') {
+            this.options.requireAttachment = false;
+            this.options.minAttachments = 0;
+            this.options.showAttachment = false;
+        }
     }
 
     _getStatusConfig(status) {
         const statusMap = {
-            draft: { 
-                text: 'Draft', 
-                icon: 'fas fa-pen-to-square' 
+            draft: {
+                text: 'Draft',
+                icon: 'fas fa-pen-to-square'
             },
             verified: {
                 text: 'Verified',
-                icon: 'fas fa-user-check' 
+                icon: 'fas fa-user-check'
             },
             approved: {
                 text: 'Approved',
                 icon: 'fas fa-check-circle'
             },
-            waitingeffective: { 
+            waitingeffective: {
                 text: 'Waiting',
                 icon: 'fas fa-clock'
             },
@@ -66,7 +90,9 @@ class AppHeader{
         return statusMap[key] || statusMap.draft;
     }
 
-    _renderForm(){
+    async _renderForm() {
+        const suppliers = await this.appMain.formComponents.getSupplierDataSource();
+
         const formContainer = document.createElement('div');
         formContainer.className = 'header-form-container';
         formContainer.innerHTML = `
@@ -77,7 +103,6 @@ class AppHeader{
             </div>
         `;
         this.container.append(formContainer);
-        console.log('Data : ', this.data);
 
         const getEditorOptions = (customOptions = {}) => {
             return {
@@ -86,28 +111,21 @@ class AppHeader{
             };
         };
 
-        // DevExtreme Form Configuration
-        const formConfig = {
-            formData: this.data,
-            labelLocation: 'left',
-            showColonAfterLabel: false,
-            readOnly: this.mode === 'view',
-            colCount: 2,
-            items: [
-                {
-                    itemType: 'simple',
-                    colSpan: 2,
-                    template: () => {
-                        const status = this.data.applicationStatus || 'Draft';
-                        const isUrgent = this.data.isUrgent || false;
+        const formItems = [
+            {
+                itemType: 'simple',
+                colSpan: 2,
+                template: () => {
+                    const status = this.data.applicationStatus || 'Draft';
+                    const isUrgent = this.data.isUrgent || false;
 
-                        const statusConfig = this._getStatusConfig(status);
+                    const statusConfig = this._getStatusConfig(status);
 
-                        return $('<div>')
-                            .css({
-                                marginBottom: '16px'
-                            })
-                            .html(`
+                    return $('<div>')
+                        .css({
+                            marginBottom: '16px'
+                        })
+                        .html(`
                                 <div class="d-flex align-items-center justify-content-between">
 
                                     <!-- Left -->
@@ -153,149 +171,265 @@ class AppHeader{
 
                                 </div>
                             `);
-                    }
-                },
-                {
-                    itemType: 'group',
-                    colCount: 2,
-                    colSpan: 2,
-                    items:[
-                        // Supplier
-                        {
-                            dataField: 'supplierId',
-                            colSpan: 2,
-                            label: {
-                                text: 'Supplier',
-                            },
-                            editorType: 'dxSelectBox',
-                            editorOptions: getEditorOptions({
-                                dataSource: this.appMain.formComponents.getSupplierDataSource(),
-                                displayExpr: 'displayName',
-                                valueExpr: 'id',
-                                placeholder: 'Select Supplier',
-                                searchEnabled: true,
-                                searchMode: 'contains',
-                                searchExpr: ['name', 'code'],
-                            }),
-                            validationRules: [{
-                                type: 'required',
-                                message: 'Please select a supplier'
-                            }]
-                        },
-                        // Effective Date
-                        {
-                            dataField: 'effectiveDate',
-                            colSpan: 1,
-                            label: {
-                                text: 'Effective Date',
-                            },
-                            editorType: 'dxDateBox',
-                            editorOptions: getEditorOptions({
-                                displayFormat: this.appMain.getDateFormat(),
-                                placeholder: 'Select Effective Date',
-                                useMaskBehavior: true
-                            }),
-                            validationRules: [{
-                                type: 'required',
-                                message: 'Please select an effective date'
-                            }]
-                        },
-                        // Is Urgent
-                        {
-                            dataField: 'isUrgent',
-                            colSpan: 1,
-                            label: {
-                                text: 'Urgent',
-                                cssClass: 'header-form-label'
-                            },
-                            editorType: 'dxCheckBox',
-                            editorOptions: getEditorOptions({
-                                text: 'Urgent'
-                            }),
-                        },
-                        // Requestor
-                        {
-                            dataField: 'requestor',
-                            colSpan: 1,
-                            label: {
-                                text: 'Requestor',
-                            },
-                            editorOptions:{
-                                readOnly: true,
-                                stylingMode: 'outlined'
-                            }
-                        },
-                        // Department
-                        {
-                            dataField: 'department',
-                            colSpan: 1,
-                            label: {
-                                text: 'Department',
-                            },
-                            editorOptions:{
-                                readOnly: true,
-                                stylingMode: 'outlined'
-                            }
-                        },
-                        // Quotation URL
-                        {
-                            dataField: 'quotationUrl',
-                            label: {
-                                text: 'Quotation URL',
-                            },
-                            editorType: 'dxTextBox',
-                            editorOptions: getEditorOptions({
-                                placeholder: 'https://example.com/quotation.pdf',
-                            }),
-                            validationRules: [{
-                                type: 'pattern',
-                                pattern: /^( https?:\/\/ )?.+/,
-                                message: 'Please enter a valid URL'
-                            }],
-                            colSpan: 2
-                        },
-
-                        // Remark
-                        {
-                            dataField: 'remark',
-                            label: {
-                                text: 'Remark',
-                            },
-                            editorType: 'dxTextArea',
-                            editorOptions: getEditorOptions({
-                                height: 80,
-                                placeholder: 'Enter additional remarks',
-                            }),
-                            colSpan: 2
-                        },
-
-                        // File Attachments
-                        {
-                            dataField: 'attachments',
-                            label: {
-                                text: 'File Attachments',
-                            },
-                            cssClass: 'file-attachment-field',
-                            template: (data, itemElement) => {
-                                this._createFileUploader(itemElement);
-                            },
-                            colSpan: 2
-                        }
-                    ]
                 }
-            ]
+            },
+            {
+                itemType: 'group',
+                colCount: 2,
+                colSpan: 2,
+                items: [
+                    // Quotation URL
+                    {
+                        dataField: 'quotationUrl',
+                        label: {
+                            text: 'Quotation URL',
+                        },
+                        editorType: 'dxTextBox',
+                        editorOptions: getEditorOptions({
+                            placeholder: 'Click browse button to select quotation',
+                            readOnly: true,
+                            buttons: [{
+                                name: 'view',
+                                location: 'after',
+                                options: {
+                                    icon: 'eyeopen',
+                                    hint: 'View Quotation',
+                                    stylingMode: 'text',
+                                    visible: false,
+                                    disabled: false,
+                                    elementAttr: {
+                                        class: 'quotation-action-btn'
+                                    },
+                                    onClick: () => this._viewQuotation()
+                                }
+                            }, {
+                                name: 'clearQuotation',
+                                location: 'after',
+                                options: {
+                                    icon: 'clear',
+                                    hint: 'Clear Quotation',
+                                    stylingMode: 'text',
+                                    disabled: this.mode === 'view',
+                                    visible: false,
+                                    elementAttr: {
+                                        class: 'quotation-action-btn'
+                                    },
+                                    onClick: () => {
+                                        this.formInstance.updateData('quotationUrl', '');
+                                        this._clearQuotation();
+                                        this._updateQuotationButtonVisibility();
+
+                                        setTimeout(() => {
+                                            this._revalidateForm();
+                                        }, 100);
+                                    }
+                                }
+                            }, {
+                                name: 'browse',
+                                location: 'before',
+                                options: {
+                                    icon: 'search',
+                                    text: 'Browse',
+                                    stylingMode: 'text',
+                                    disabled: this.mode === 'view',
+                                    visible: this.mode !== 'view',
+                                    onClick: async () => await this._openQuotationSelector()
+                                }
+                            }
+                            ]
+                        }),
+                        validationRules: [{
+                            type: 'custom',
+                            reevaluate: true,
+                            validationCallback: (options) => {
+                                const hasSupplier = this.formInstance?.getEditor('supplierCode')?.option('value');
+                                
+                                if (!hasSupplier) {
+                                    return true;
+                                }
+                                
+                                const hasQuotation = options.value && options.value.trim() !== '';
+                                const hasAttachment = this._getAllFiles().length > 0;
+                                
+                                return hasQuotation || hasAttachment;
+                            },
+                            message: 'Please provide quotation URL or attach files'
+                        }],
+
+                        colSpan: 2
+                    },
+                    // Supplier
+                    {
+                        dataField: 'supplierCode',
+                        colSpan: 2,
+                        label: {
+                            text: 'Supplier',
+                        },
+                        editorType: 'dxSelectBox',
+                        editorOptions: getEditorOptions({
+                            dataSource: {
+                                store: suppliers || [],
+                                paginate: true,
+                                pageSize: 20
+                            },
+                            displayExpr: 'displayName',
+                            valueExpr: 'code',
+                            placeholder: 'Select Supplier',
+                            searchEnabled: true,
+                            searchMode: 'contains',
+                            searchExpr: ['name', 'code'],
+                            readOnly: !!this.data.quotationUrl,
+                            onValueChanged: (e) => {
+                                if (this.isUpdatingFromQuotation) return;
+
+                                this.isUpdatingFromSupplier = true;
+
+                                const selectedItem = e.component.option('selectedItem');
+                                this.formInstance.updateData({
+                                    supplierName: selectedItem ? selectedItem.name.trim() : ''
+                                });
+
+                                // Clear quotationUrl when supplier changes
+                                const currentQuotation = this.formInstance.getEditor('quotationUrl')?.option('value');
+                                if (currentQuotation) {
+                                    this._clearQuotation();
+                                    this.appMain.notification.info('Quotation cleared due to supplier change.');
+                                }
+
+                                this.isUpdatingFromSupplier = false;
+
+                                this._revalidateForm();
+                            }
+                        }),
+                        validationRules: [{
+                            type: 'required',
+                            message: 'Please select a supplier'
+                        }]
+                    },
+                    {
+                        dataField: 'supplierName',
+                        visible: false,
+                        editorOptions: {
+                            readOnly: true,
+                            stylingMode: 'outlined'
+                        }
+                    },
+                    // Effective Date
+                    {
+                        dataField: 'effectiveDate',
+                        colSpan: 1,
+                        label: {
+                            text: 'Effective Date',
+                        },
+                        editorType: 'dxDateBox',
+                        editorOptions: getEditorOptions({
+                            displayFormat: this.appMain.getDateFormat(),
+                            placeholder: 'Select Effective Date',
+                            useMaskBehavior: true,
+                            readOnly: !!this.data.quotationUrl,
+                            onValueChanged: (e) => {
+                                this._revalidateForm();
+                            }
+                        }),
+                        validationRules: [{
+                            type: 'required',
+                            message: 'Please select an effective date'
+                        }]
+                    },
+                    // Is Urgent
+                    {
+                        dataField: 'isUrgent',
+                        colSpan: 1,
+                        label: {
+                            text: 'Urgent',
+                            cssClass: 'header-form-label'
+                        },
+                        editorType: 'dxCheckBox',
+                        editorOptions: getEditorOptions({
+                            text: 'Urgent'
+                        }),
+                    },
+                    // Requester
+                    {
+                        dataField: 'requester',
+                        colSpan: 1,
+                        label: {
+                            text: 'Requester',
+                        },
+                        editorOptions: {
+                            readOnly: true,
+                            stylingMode: 'outlined'
+                        }
+                    },
+                    // Department
+                    {
+                        dataField: 'department',
+                        colSpan: 1,
+                        label: {
+                            text: 'Department',
+                        },
+                        editorOptions: {
+                            readOnly: true,
+                            stylingMode: 'outlined'
+                        }
+                    },
+                    // Remark
+                    {
+                        dataField: 'remark',
+                        label: {
+                            text: 'Remark',
+                        },
+                        editorType: 'dxTextArea',
+                        editorOptions: getEditorOptions({
+                            height: 80,
+                            placeholder: 'Enter additional remarks',
+                        }),
+                        colSpan: 2
+                    },
+                ]
+            }
+        ];
+
+        if (this.options.showAttachment) {
+            formItems[1].items.push(
+                // File Attachments
+                {
+                    dataField: 'attachments',
+                    label: {
+                        text: 'File Attachments',
+                    },
+                    cssClass: 'file-attachment-field',
+                    template: (data, itemElement) => {
+                        this._createFileUploader(itemElement);
+                    },
+                    colSpan: 2
+                }
+            )
+        }
+
+        // DevExtreme Form Configuration
+        const formConfig = {
+            formData: this.data,
+            labelLocation: 'left',
+            showColonAfterLabel: false,
+            readOnly: this.mode === 'view',
+            colCount: 2,
+            items: formItems
         };
-        
+
         // Initialize Form
         this.formInstance = $('#headerFormElements').dxForm(formConfig).dxForm('instance');
+
+        // Update quotation button visibility
+        this._updateQuotationButtonVisibility();
     }
 
-    _createFileUploader(container){
+    _createFileUploader(container) {
         const $wrapper = $('<div class="file-upload-section">').appendTo(container);
 
         this._renderFileList($wrapper);
 
-        if(this.mode === 'form'){
+        if (this.mode === 'form') {
             this._renderUploadZone($wrapper);
         }
     }
@@ -305,9 +439,9 @@ class AppHeader{
         if (this.fileListInstance) {
             this.fileListInstance.dispose();
         }
-        
+
         const $listContainer = $('<div class="mb-3">').appendTo($container);
-        
+
         this.fileListInstance = $listContainer.dxList({
             dataSource: allFiles,
             minHeight: 300,
@@ -316,7 +450,7 @@ class AppHeader{
             hoverStateEnabled: false,
             activeStateEnabled: false,
             noDataText: 'Do not have any files attached.',
-            elementAttr:{
+            elementAttr: {
                 class: 'custom-file-list'
             },
             onContentReady: (e) => {
@@ -381,7 +515,7 @@ class AppHeader{
                         onClick: () => this._deleteFile(data)
                     });
                 }
-                
+
                 return $item;
             },
         }).dxList('instance');
@@ -392,16 +526,46 @@ class AppHeader{
         return ext === 'pdf';
     }
 
+    canAddMoreFiles() {
+        if (!this.options.maxAttachments) return true;
+        return this._getAllFiles().length < this.options.maxAttachments;
+    }
+
     _renderUploadZone($container) {
+        const canUpload = this.canAddMoreFiles();
+
         $('<div class="mt-3">').appendTo($container).dxFileUploader({
             multiple: true,
             accept: '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.svg',
             uploadMode: 'useButtons',
             selectButtonText: 'Select Files',
-            labelText: 'or drag files here',
+            labelText: canUpload
+                ? 'or drag files here'
+                : `Maximum ${this.options.maxAttachments} files reached`,
             maxFileSize: 10485760, // 10 MB
+            disabled: !canUpload,
             onValueChanged: (e) => {
                 if (e.value?.length) {
+                    if (this.options.maxAttachments) {
+                        const currentCount = this._getAllFiles().length;
+                        const availableSlots = this.options.maxAttachments - currentCount;
+
+                        if (availableSlots <= 0) {
+                            this.appMain.notification.warning(
+                                `Maximum ${this.options.maxAttachments} files allowed`
+                            );
+                            e.component.reset();
+                            return;
+                        }
+
+                        if (e.value.length > availableSlots) {
+                            this.appMain.notification.warning(
+                                `You can only add ${availableSlots} more file(s)`
+                            );
+                            e.value = Array.from(e.value).slice(0, availableSlots);
+                        }
+                    }
+
                     const allowedExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'svg'];
                     const maxFileSize = 10485760; // 10 MB
 
@@ -422,7 +586,7 @@ class AppHeader{
 
                     // Filter out duplicates
                     const newFiles = validFiles.filter(newFile => {
-                        return !this.pendingFiles.some(existingFile => 
+                        return !this.pendingFiles.some(existingFile =>
                             existingFile.name === newFile.name && existingFile.size === newFile.size
                         );
                     });
@@ -451,12 +615,138 @@ class AppHeader{
                         this.appMain.notification.success(
                             `${newFiles.length} file(s) added successfully.`
                         );
+
+                        this._revalidateForm();
                     }
 
                     e.component.reset();
                 }
             }
         });
+    }
+
+    async _openQuotationSelector() {
+        // const supplierCode = this.formInstance.getEditor('supplierCode')?.option('value');
+        // const supplierName = this.formInstance.getEditor('supplierName')?.option('value');
+        const supplierCode = null;
+        const supplierName = 'Nikon Thailand Co., Ltd.';
+
+        const displayName = supplierCode && supplierName
+            ? `${supplierCode} : ${supplierName}`
+            : '';
+
+        await this.quotationSelector.show(
+            supplierCode || null,
+            displayName || 'All Suppliers',
+            (selectedQuotation) => {
+                this._onQuotationSelected(selectedQuotation);
+            }
+        );
+    }
+
+    _onQuotationSelected(quotation) {
+        if (!quotation || !quotation.code) {
+            this.appMain.notification.error('Invalid quotation data');
+            return;
+        }
+
+        this.isUpdatingFromQuotation = true;
+
+        // Update quotation URL
+        this.formInstance.updateData('quotationUrl', quotation.code);
+        this._updateQuotationButtonVisibility();
+
+        // Auto-fill supplier
+        if (quotation.vendorCode && quotation.vendorName) {
+            this.formInstance.updateData({
+                supplierCode: quotation.vendorCode || '',
+                supplierName: quotation.vendorName || ''
+            });
+
+            // Set supplier to readonly
+            const supplierEditor = this.formInstance.getEditor('supplierCode');
+            if (supplierEditor) {
+                supplierEditor.option('readOnly', true);
+                supplierEditor.option('stylingMode', 'outlined');
+            }
+        }
+
+        // Auto-fill effective date
+        if (quotation.validFrom) {
+            this.formInstance.updateData('effectiveDate', new Date(quotation.validFrom));
+
+            // Set effective date to readonly
+            const effectiveDateEditor = this.formInstance.getEditor('effectiveDate');
+            if (effectiveDateEditor) {
+                effectiveDateEditor.option('readOnly', true);
+                effectiveDateEditor.option('stylingMode', 'outlined');
+            }
+        }
+
+        this.isUpdatingFromQuotation = false;
+
+        this._revalidateForm();
+
+        this.appMain.notification.success(
+            `Selected: ${quotation.code}${quotation.vendorCode ? ' - ' + quotation.vendorCode : ''}`
+        );
+    }
+
+    _updateQuotationButtonVisibility() {
+        const quotationEditor = this.formInstance.getEditor('quotationUrl');
+        if (!quotationEditor) return;
+
+        const currentValue = quotationEditor.option('value');
+        const hasValue = !!(currentValue && currentValue.trim());
+
+        const buttons = quotationEditor.option('buttons');
+
+        // Update View button
+        const viewButton = buttons.find(b => b.name === 'view');
+        if (viewButton) {
+            viewButton.options.visible = hasValue;
+        }
+
+        // Update Clear button
+        const clearButton = buttons.find(b => b.name === 'clearQuotation');
+        if (clearButton) {
+            clearButton.options.visible = hasValue;
+        }
+
+        // Force repaint to apply visibility changes
+        quotationEditor.repaint();
+    }
+
+    _viewQuotation() {
+        const quotationUrl = this.formInstance.getEditor('quotationUrl')?.option('value');
+
+        if (!quotationUrl || quotationUrl.trim() === '') {
+            this.appMain.notification.warning('No quotation selected');
+            return;
+        }
+
+        const url = `${window.APP_CONFIG.qcsUrl.view}${quotationUrl}`;
+        window.open(url, '_blank');
+    }
+
+    _clearQuotation() {
+        this.formInstance.updateData({ quotationUrl: '' });
+        this._updateQuotationButtonVisibility();
+
+        // Enable supplier and effective date
+        const supplierEditor = this.formInstance.getEditor('supplierCode');
+        const effectiveDateEditor = this.formInstance.getEditor('effectiveDate');
+
+        if (supplierEditor) {
+            supplierEditor.option('value', null);
+            supplierEditor.option('readOnly', false);
+            supplierEditor.option('stylingMode', 'filled');
+        }
+        if (effectiveDateEditor) {
+            effectiveDateEditor.option('value', null);
+            effectiveDateEditor.option('readOnly', false);
+            effectiveDateEditor.option('stylingMode', 'filled');
+        }
     }
 
     _getAllFiles() {
@@ -474,7 +764,7 @@ class AppHeader{
                 }
             });
         }
-        
+
         this.pendingFiles.forEach((file, index) => {
             files.push({
                 index: index,
@@ -485,14 +775,7 @@ class AppHeader{
                 file: file
             });
         });
-        console.log('All files (existing + pending):', files);
         return files;
-    }
-
-    _refreshFileList() {
-        if (this.fileListInstance) {
-            this.fileListInstance.option('dataSource', this._getAllFiles());
-        }
     }
 
     async _previewFile(data) {
@@ -526,17 +809,19 @@ class AppHeader{
             okText: 'Delete',
             type: 'danger'
         });
-        
+
         if (!result) return;
-        
+
         if (data.isNew) {
             this.pendingFiles.splice(data.index, 1);
         } else {
             this.deletedFileIds.push(data.id);
         }
-        
+
         this._refreshFileList();
         this.appMain.notification.success('File deleted successfully.');
+
+        this._revalidateForm();
     }
 
     _getFileIconWithStyle(fileName) {
@@ -573,28 +858,284 @@ class AppHeader{
         return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
     }
 
-    validate(){
-        if(this.formInstance){
-            const result = this.formInstance.validate();
-            return result.isValid;
+    _refreshFileList() {
+        if (this.fileListInstance) {
+            this.fileListInstance.option('dataSource', this._getAllFiles());
         }
-        return true; // View mode always valid
+
+        if (this.formInstance && this.mode === 'form') {
+            this.formInstance.getEditor('attachments')?.validate();
+        }
     }
 
-    get(){
-        if(this.formInstance){
-            return this.formInstance.option('formData');
+    validate() {
+        if (!this.formInstance) {
+            return this._createValidationResult(true);
+        }
+
+        // 1. Validate form
+        const formValidation = this.formInstance.validate();
+        
+        // 2. ตรวจสอบว่ามี error อะไรบ้าง
+        const hasOtherErrors = formValidation.brokenRules?.some(rule => {
+            const field = rule.validator?.element?.dataset?.field;
+            return field && field !== 'quotationUrl';
+        });
+        
+        // 3. ถ้ามี error อื่นๆ (ไม่ใช่ quotationUrl) ให้ scroll ไปที่นั่นก่อน
+        if (hasOtherErrors) {
+            this._scrollToFirstNonQuotationError();
+            return formValidation;
+        }
+        
+        // 4. ถ้า error แค่ quotationUrl หรือไม่มี error เลย ให้ validate business rules
+        return this._validateBusinessRules();
+    }
+
+    _validateBusinessRules() {
+        // 1. Validate Supplier
+        const supplierCode = this.formInstance.getEditor('supplierCode')?.option('value');
+        if (!supplierCode) {
+            const $supplierField = $(this.container).find('[data-field="supplierCode"]');
+            if ($supplierField.length) {
+                $supplierField[0].scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
+            
+            return this._createValidationResult(
+                false,
+                'Please select a supplier',
+                'required'
+            );
+        }
+        
+        // 2. Validate Quotation OR Attachment
+        const quotationUrl = this._getQuotationUrl();
+        const allFiles = this._getAllFiles();
+        
+        if (quotationUrl || allFiles.length > 0) {
+            return this._createValidationResult(true);
+        }
+        
+        // 3. แสดง error ทั้งสองที่พร้อมกัน
+        this._showQuotationAndAttachmentErrors();
+        
+        return this._createValidationResult(
+            false,
+            'Please provide either a Quotation URL or attach at least one file',
+            'custom'
+        );
+    }
+
+    _showQuotationAndAttachmentErrors() {
+        // 1. Highlight Quotation URL field
+        const quotationEditor = this.formInstance.getEditor('quotationUrl');
+        if (quotationEditor) {
+            const $quotationField = $(quotationEditor.element()).closest('.dx-field-item');
+            $quotationField.addClass('dx-invalid');
+            
+            // Add error message if not exists
+            if (!$quotationField.find('.dx-invalid-message').length) {
+                $quotationField.append(`
+                    <div class="dx-invalid-message">
+                        <span class="dx-invalid-message-content">
+                            Please provide quotation URL or attach files
+                        </span>
+                    </div>
+                `);
+            }
+
+            // Auto remove quotation error after 5 seconds
+            setTimeout(() => {
+                $quotationField.removeClass('dx-invalid');
+                $quotationField.find('.dx-invalid-message-auto').fadeOut(300, function() {
+                    $(this).remove();
+                });
+            }, 5000);
+        }
+        
+        // 2. Highlight File Upload Section
+        this._highlightFileSection();
+        
+        // 3. Scroll to quotation field 
+        const $quotationField = $(this.container).find('[data-field="quotationUrl"]');
+        if ($quotationField.length) {
+            $quotationField[0].scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }
+
+    _highlightFileSection() {
+        const $fileSection = $(this.container).find('.file-upload-section');
+        
+        // Add validation error styling
+        $fileSection.addClass('validation-error');
+        
+        // Add error message if not exists
+        if (!$fileSection.find('.file-section-error').length) {
+            $fileSection.prepend(`
+                <div class="file-section-error dx-invalid-message" style="margin-bottom: 12px;">
+                    <span class="dx-invalid-message-content">
+                        Please attach at least one file or provide quotation URL
+                    </span>
+                </div>
+            `);
+        }
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            $fileSection.removeClass('validation-error');
+            $fileSection.find('.file-section-error').fadeOut(300, function() {
+                $(this).remove();
+            });
+        }, 5000);
+    }
+
+    _clearValidationErrors() {
+        // Clear quotation URL error
+        const quotationEditor = this.formInstance.getEditor('quotationUrl');
+        if (quotationEditor) {
+            const $quotationField = $(quotationEditor.element()).closest('.dx-field-item');
+            $quotationField.removeClass('dx-invalid');
+            $quotationField.find('.dx-invalid-message').remove();
+        }
+        
+        // Clear file section error
+        const $fileSection = $(this.container).find('.file-upload-section');
+        $fileSection.removeClass('validation-error');
+        $fileSection.find('.file-section-error').remove();
+    }
+
+    _hasFieldError(fieldName, validationResult) {
+        if (!validationResult || !validationResult.brokenRules) return false;
+        
+        return validationResult.brokenRules.some(rule => 
+            rule.validator?.element?.dataset?.field === fieldName
+        );
+    }
+
+    _scrollToFirstNonQuotationError() {
+        const $errors = $(this.container).find('.dx-invalid');
+        
+        for (let i = 0; i < $errors.length; i++) {
+            const $error = $errors.eq(i);
+            const $field = $error.closest('.dx-field-item');
+            const dataField = $field.find('[data-field]').attr('data-field');
+            
+            if (dataField !== 'quotationUrl') {
+                $error[0].scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+                break;
+            }
+        }
+    }
+
+    _scrollToFirstError() {
+        const $firstError = $(this.container).find('.dx-invalid').first();
+        if ($firstError.length) {
+            $firstError[0].scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }
+
+    _getQuotationUrl() {
+        const value = this.formInstance.getEditor('quotationUrl')?.option('value');
+        return value && value.trim() !== '' ? value : null;
+    }
+
+    _createValidationResult(isValid, message = '', type = 'custom') {
+        if (isValid) {
+            return {
+                isValid: true,
+                brokenRules: []
+            };
+        }
+        
+        return {
+            isValid: false,
+            brokenRules: [{
+                type: type,
+                message: message,
+                validator: null
+            }]
+        };
+    }
+
+    _revalidateForm() {
+        if (!this.formInstance) return;
+
+        // Clear custom validation errors
+        this._clearValidationErrors();
+
+        // Force re-render validation by updating formData
+        const currentData = this.formInstance.option('formData');
+        this.formInstance.option('formData', { ...currentData });
+
+        // Optional: Clear validation errors
+        setTimeout(() => {
+            const quotationEditor = this.formInstance.getEditor('quotationUrl');
+            const supplierEditor = this.formInstance.getEditor('supplierCode');
+
+            if (quotationEditor) {
+                quotationEditor.option('isValid', true);
+            }
+            if (supplierEditor) {
+                supplierEditor.option('isValid', true);
+            }
+        }, 50);
+    }
+
+    get() {
+        if (this.formInstance) {
+            const formData = this.formInstance.option('formData');
+
+            return {
+                ...formData,
+
+                // New Attachments
+                newAttachments: this.pendingFiles,
+                // Deleted Attachment IDs
+                deletedAttachmentIds: this.deletedFileIds,
+                totalAttachments: this._getAllFiles().length
+            };
         }
         return this.data;
     }
 
-    update(data){
+    getAttachmentData() {
+        return {
+            existingFiles: this.data.fileAttachments?.filter(
+                file => !this.deletedFileIds.includes(file.id)
+            ) || [],
+
+            newFiles: this.pendingFiles,
+            deletedFileIds: this.deletedFileIds,
+            allFiles: this._getAllFiles(),
+
+            stats: {
+                existing: this.data.fileAttachments?.length || 0,
+                added: this.pendingFiles.length,
+                deleted: this.deletedFileIds.length,
+                total: this._getAllFiles().length
+            }
+        };
+    }
+
+    update(data) {
         this.data = data;
         this.render();
     }
 
-    reset(){
-        if(this.formInstance){
+    reset() {
+        if (this.formInstance) {
             this.formInstance.resetValues();
         }
     }
@@ -606,4 +1147,28 @@ class AppHeader{
         }
     }
 
+    dispose() {
+        // Cleanup quotation selector
+        if (this.quotationSelector) {
+            this.quotationSelector.dispose();
+            this.quotationSelector = null;
+        }
+
+        // Cleanup form
+        if (this.formInstance) {
+            this.formInstance.dispose();
+            this.formInstance = null;
+        }
+
+        // Cleanup file list
+        if (this.fileListInstance) {
+            this.fileListInstance.dispose();
+            this.fileListInstance = null;
+        }
+
+        // Clear data
+        this.pendingFiles = [];
+        this.deletedFileIds = [];
+        this.data = null;
+    }
 }

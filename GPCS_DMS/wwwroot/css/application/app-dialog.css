@@ -66,6 +66,10 @@
     align-items: flex-start;
 }
 
+.dialog-content {
+    flex: 1;
+}
+
 .dialog-icon {
     flex-shrink: 0;
     width: 24px;
@@ -92,7 +96,6 @@
 }
 
 .dialog-message {
-    flex: 1;
     font-size: 14px;
     line-height: 1.6;
     color: #595959;
@@ -296,3 +299,33 @@
 .dialog.show {
     animation: dialogSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* Textarea Style */
+.dialog-textarea {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+.dialog-textarea:focus {
+    outline: none;
+    border-color: #4a90e2;
+}
+
+.dialog-textarea.error {
+    border-color: #e74c3c;
+    animation: shake 0.3s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+

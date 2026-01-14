@@ -118,6 +118,160 @@ class AppCore {
                 body: JSON.stringify(data) 
             }));
         }
+
+        static async getCache(url ,ttl = AppCore.Cache.defaultTTL){
+            const cacheKey = `GET:${url}`;
+            const cached = AppCore.Cache.get(cacheKey);
+
+            if(cached){
+                return cached;
+            }
+
+            const response = await this.handleApiResponse(
+                this._request(url, { method: 'GET' })
+            );
+            if(response.success){
+                AppCore.Cache.set(cacheKey, response, ttl);
+            }
+            return response;
+        }
+
+        // FormData support
+        static async postFormData(url, formData) {
+            const core = AppCore.instance;
+            const fullUrl = url.startsWith('http') ? url : core.config.baseURL + url;
+
+            try{
+                const response = await fetch(fullUrl, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include',
+                    headers:{
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                });
+
+                if(!response.ok){
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const contentType = response.headers.get('content-type');
+                if(contentType && contentType.includes('application/json')){
+                    const jsonResponse = await response.json();
+                    return this.handleApiResponse(Promise.resolve(jsonResponse));
+                }
+
+                return {
+                    success: true,
+                    data: await response.text(),
+                    message: 'Operation successful',
+                    errors: []
+                };
+
+            }catch (error){
+                console.error('Fetch error:', error);
+                return {
+                    success: false,
+                    data: null,
+                    message: error.message || 'Unknown error occurred',
+                    errors: [error.message || 'Unknown error']
+                };
+            }
+        }
+
+        static async putFormData(url, formData) {
+            const core = AppCore.instance;
+            const fullUrl = url.startsWith('http') ? url : core.config.baseURL + url;
+
+            try{
+                const response = await fetch(fullUrl, {
+                    method: 'PUT',
+                    body: formData,
+                    credentials: 'include',
+                    headers:{
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                });
+
+                if(!response.ok){
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const contentType = response.headers.get('content-type');
+                if(contentType && contentType.includes('application/json')){
+                    const jsonResponse = await response.json();
+                    return this.handleApiResponse(Promise.resolve(jsonResponse));
+                }
+
+                return {
+                    success: true,
+                    data: await response.text(),
+                    message: 'Operation successful',
+                    errors: []
+                };
+
+            }catch (error){
+                console.error('Fetch error:', error);
+                return {
+                    success: false,
+                    data: null,
+                    message: error.message || 'Unknown error occurred',
+                    errors: [error.message || 'Unknown error']
+                };
+            }
+        }
+    }
+
+    static Cache = class {
+        static _cache = new Map();
+        static _timestamps = new Map();
+        static defaultTTL = 5 * 60 * 1000; // Default Time-To-Live: 5 minutes
+
+        static get(key) {
+            if (!this._cache.has(key)) return null;
+
+            const timestamp = this._timestamps.get(key);
+            const now = Date.now();
+
+            // Check if expired
+            if (timestamp && (now - timestamp) > this.defaultTTL) {
+                this.delete(key);
+                return null;
+            }
+
+            return this._cache.get(key);
+        }
+
+        static set(key, value, ttl = this.defaultTTL) {
+            this._cache.set(key, value);
+            this._timestamps.set(key, Date.now());
+
+            // Auto cleanup after TTL
+            if (ttl > 0) {
+                setTimeout(() => this.delete(key), ttl);
+            }
+        }
+
+        static delete(key) {
+            this._cache.delete(key);
+            this._timestamps.delete(key);
+        }
+
+        static clear() {
+            this._cache.clear();
+            this._timestamps.clear();
+        }
+
+        static has(key) {
+            return this.get(key) !== null;
+        }
+
+        static getStats() {
+            return {
+                size: this._cache.size,
+                keys: Array.from(this._cache.keys())
+            };
+        }
     }
 
     static Utils = class {
