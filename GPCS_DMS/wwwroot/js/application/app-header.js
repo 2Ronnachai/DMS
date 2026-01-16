@@ -278,7 +278,6 @@ class AppHeader {
                             searchEnabled: true,
                             searchMode: 'contains',
                             searchExpr: ['name', 'code'],
-                            readOnly: !!this.data.quotationUrl,
                             onValueChanged: (e) => {
                                 if (this.isUpdatingFromQuotation) return;
 
@@ -326,7 +325,6 @@ class AppHeader {
                             displayFormat: this.appMain.getDateFormat(),
                             placeholder: 'Select Effective Date',
                             useMaskBehavior: true,
-                            readOnly: !!this.data.quotationUrl,
                             onValueChanged: (e) => {
                                 this._revalidateForm();
                             }
@@ -784,7 +782,28 @@ class AppHeader {
             window.open(url, '_blank');
             setTimeout(() => URL.revokeObjectURL(url), 1000);
         } else {
-            window.open(`/api/file-attachments/${data.id}/preview`, '_blank');
+            try{
+                const response = await this.appMain.http.get(
+                    this.appMain.endpoints.fileAttachments.preview(data.id)
+                );
+
+                if(!response || !response.data){
+                    this.appMain.notification.error('Failed to preview file.');
+                    return;
+                }
+
+                const fileInfo = response.data;
+                if(!fileInfo || !fileInfo.isPreviewable){
+                    this.appMain.notification.error('This file type cannot be previewed.');
+                    return;
+                }
+
+                window.open(
+                    this.appMain.endpoints.fileAttachments.getPreviewUrl(data.id), '_blank'
+                );
+            }catch(error){
+                this.appMain.notification.error('Failed to preview file.');
+            }
         }
     }
 
@@ -798,7 +817,24 @@ class AppHeader {
             link.click();
             URL.revokeObjectURL(url);
         } else {
-            window.location.href = `/api/file-attachments/${data.id}/download`;
+            try{
+                this.appMain.loading.show('Downloading file...');
+                const response = await this.appMain.http.get(
+                    this.appMain.endpoints.fileAttachments.download(data.id),
+                    { responseType: 'blob' }
+                );
+                this.appMain.loading.hide();
+                const url = URL.createObjectURL(response.data);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = data.name;
+                link.click();
+                URL.revokeObjectURL(url);
+                this.appMain.notification.success('File downloaded successfully.');
+            }catch(error){
+                this.appMain.notification.error('Failed to download file.');
+                this.appMain.loading.hide();
+            }
         }
     }
 
@@ -919,7 +955,7 @@ class AppHeader {
             return this._createValidationResult(true);
         }
         
-        // 3. แสดง error ทั้งสองที่พร้อมกัน
+        // 3. Show errors
         this._showQuotationAndAttachmentErrors();
         
         return this._createValidationResult(

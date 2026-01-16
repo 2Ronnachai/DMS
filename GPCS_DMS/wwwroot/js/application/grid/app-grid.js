@@ -102,6 +102,8 @@ class AppGrid {
     // Columns Definitions
     _getNewMaterialItemColumns(editable = false) {
         const columns = [
+            { dataField: 'id', caption: 'ID', visible: false },
+            { dataField: 'item.id', caption: 'Item ID', visible: false },
             {
                 dataField: 'no',
                 caption: 'No.',
@@ -146,7 +148,7 @@ class AppGrid {
                 }
             },
             {                
-                dataField: 'materialSpecification',
+                dataField: 'materialDescription',
                 visible: false
             },
             {
@@ -173,12 +175,24 @@ class AppGrid {
             {
                 caption: 'Price',
                 cellTemplate: (container, options) => {
+                    const formatPrice = (price) => {
+                        return price != null ? price.toLocaleString('en-US', { 
+                            minimumFractionDigits: 4, 
+                            maximumFractionDigits: 4 
+                        }) : '-';
+                    };
+                    
                     $('<div>').html(`
-                        <div style="padding: 4px 0; border-bottom: 1px solid #e0e0e0;">${options.data.materialUnitPrice != null ? options.data.materialUnitPrice.toFixed(4) : '-'} THB</div>
-                        <div style="padding: 4px 0; color: #666;">${options.data.item?.itemUnitPrice != null ? options.data.item.itemUnitPrice.toFixed(4) : '-'} ${options.data.item?.currency || ''}</div>
+                        <div style="padding: 4px 0; border-bottom: 1px solid #e0e0e0;">
+                            ${formatPrice(options.data.materialUnitPrice)} THB
+                        </div>
+                        <div style="padding: 4px 0; color: #666;">
+                            ${formatPrice(options.data.item?.itemUnitPrice)} ${options.data.item?.currency || ''}
+                        </div>
                     `).appendTo(container);
                 }
             },
+
             {
                 dataField: 'materialUnitPrice',
                 visible: false
@@ -188,7 +202,7 @@ class AppGrid {
                 visible: false
             },
             {
-                dataField: 'minimunOrder',
+                dataField: 'minimumOrder',
                 caption: 'Safety stock',
             },
             {
@@ -289,6 +303,10 @@ class AppGrid {
                 {
                     location: 'before',
                     template: () => {
+                        if (this.appMain.mode === 'view' || this.appMain.mode === 'approve') {
+                            return $('<span/>'); 
+                        }
+
                         return $('<button/>')
                             .addClass('dialog-btn dialog-danger dialog-btn-ok')
                             .html('<i class="fas fa-trash"></i> Delete Selected')
@@ -363,7 +381,7 @@ class AppGrid {
         const config = this._getGridConfigurations();
 
         const baseConfig = {
-            dataSource: this.data ? this.data.items : [],
+            dataSource: this.data ? this.data.materials : [],
             showBorders: true,
             showRowLines: true,
             showColumnLines: true,

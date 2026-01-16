@@ -97,3 +97,6 @@
     75% { transform: translateX(5px); }
 }
 
+.dx-datagrid-rowsview .dx-row > td {
+    vertical-align: middle !important;
+}

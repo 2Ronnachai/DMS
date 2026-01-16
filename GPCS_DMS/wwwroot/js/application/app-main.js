@@ -44,6 +44,12 @@ class AppMain {
             },
             applications:{
                 save: 'applications/save/',
+                submit: 'applications/submit/',
+                
+            },
+            fileAttachments:{
+                download: (id) => `file-attachments/${id}/download/`,
+                preview : (id) => `file-attachments/${id}/preview/`
             }
         };
 
@@ -145,7 +151,16 @@ class AppMain {
                 console.error('Failed to load application data:', error);
             }
         }else if(this.applicationId && this.applicationType){
-            // Load existing application data for edit/view/approve modes
+            try{
+                const response = await this.http.get(this.endpoints.loadHeaderData(this.applicationType) + `/${this.applicationId}`);
+                if(response && response.success){
+                    this.applicationData = response.data ? response.data : response;
+                }else{
+                    throw new Error('Failed to load application data from server.');
+                }
+            }catch(error){
+                console.error('Failed to load application data:', error);
+            }
         }else{
             // Show default header for new application and change mode to view
         }

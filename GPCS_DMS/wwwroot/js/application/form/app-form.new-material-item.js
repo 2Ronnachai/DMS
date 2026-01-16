@@ -619,6 +619,7 @@ class NewMaterialItemsForm {
             materialUnitPrice: formData.materialUnitPrice,
             minimunOrder: formData.minimunOrder,
             costCenter: formData.costCenter,
+            runningNumber: 0, // Default running number
             item: {
                 itemDescription: formData.itemDescription,
                 itemUnit: formData.itemUnit,
@@ -629,7 +630,8 @@ class NewMaterialItemsForm {
                 conversionRate: formData.conversionRate,
                 leadTime: formData.leadTime,
                 quotationExpiryDate: formData.quotationExpiryDate,
-                groupOfGoods: formData.groupOfGoods
+                groupOfGoods: formData.groupOfGoods,
+                runningNumber: 0 // Default running number
             }
         };
 
