@@ -5,6 +5,15 @@ class NewMaterialItemsForm {
         this.data = applicationData;
 
         this.formInstance = null;
+        this.sessionKey = 'newmaterialsitems_lastSelected';
+
+        this.lookupData = {
+            categories: [],
+            materialTypes: [],
+            units: [],
+            exchangeRates: [],
+            groupOfGoods: []
+        };
     }
 
     async render() {
@@ -12,6 +21,10 @@ class NewMaterialItemsForm {
             await this._loadLookupDataSources();
             this.container.innerHTML = '';
             this._renderForm();
+
+            setTimeout(() => {
+                this.loadFromSession();
+            }, 300);
         } catch (error) {
             console.error('Error rendering NewMaterialItemsForm:', error);
         }
@@ -208,10 +221,11 @@ class NewMaterialItemsForm {
                         onValueChanged: (e) => {
                             if (e.value) {
                                 const selectedCategory = this.lookupData.categories.find(cat => cat.id === e.value);
-                                console.log('Selected Category:', selectedCategory);
                                 if (selectedCategory) {
                                     this.update('costCenter', selectedCategory.costCenter);
                                 }
+
+                                this.saveToSession();
                             } else {
                                 this.update('costCenter', null);
                             }
@@ -241,8 +255,9 @@ class NewMaterialItemsForm {
                         searchEnabled: true,
                         showClearButton: true,
                         onValueChanged: (e) => {
-                            const selectedMaterialTypeId = e.value;
-                            console.log('Selected Material Type ID:', selectedMaterialTypeId);
+                            if (e.value) {
+                                this.saveToSession();
+                            }
                         },
                         stylingMode: 'filled'
                     },
@@ -350,6 +365,8 @@ class NewMaterialItemsForm {
                             editorOptions: {
                                 readOnly: true,
                                 stylingMode: 'outlined',
+                                placeholder: 'Cost Center will be auto-filled',
+                                showClearButton: true
                             }
                         }
                     ]
@@ -512,7 +529,7 @@ class NewMaterialItemsForm {
                                 onEnterKey: (e) => {
                                     const inputValue = e.component._input().val();
                                     const days = parseInt(inputValue);
-                                    
+
                                     if (!isNaN(days) && days > 0) {
                                         const newDate = new Date();
                                         newDate.setDate(newDate.getDate() + days);
@@ -522,7 +539,7 @@ class NewMaterialItemsForm {
                                 onFocusOut: (e) => {
                                     const inputValue = e.component._input().val();
                                     const days = parseInt(inputValue);
-                                    
+
                                     if (!isNaN(days) && days > 0 && inputValue === days.toString()) {
                                         const newDate = new Date();
                                         newDate.setDate(newDate.getDate() + days);
@@ -595,6 +612,7 @@ class NewMaterialItemsForm {
             }).then((confirmed) => {
                 if (confirmed) {
                     this.reset();
+                    this.clearSession();
                 }
             });
         });
@@ -607,9 +625,24 @@ class NewMaterialItemsForm {
         });
     }
 
+    _calculateTHBUnitPrice() {
+        if (!this.formInstance) return;
+        const formData = this.get();
+        const itemUnitPrice = formData.itemUnitPrice || 0;
+        const currency = formData.currency || 'THB';
+        const exchangeRates = this.lookupData.exchangeRates || [];
+        const selectedRate = exchangeRates.find(r => r.code === currency);
+        if (selectedRate) {
+            const thbUnitPrice = itemUnitPrice * selectedRate.rateToTHB;
+            this.update('materialUnitPrice', thbUnitPrice);
+        }
+    }
+
     prepareDataForSubmission() {
+        this._calculateTHBUnitPrice();
         const formData = this.get();
         console.log('Before preparation, data is:', formData);
+
         // For example, format dates, convert types, etc.
         const preparedData = {
             categoryId: formData.categoryId,
@@ -637,6 +670,53 @@ class NewMaterialItemsForm {
 
         console.log('After preparation, data is:', preparedData);
         return preparedData;
+    }
+
+    saveToSession() {
+        try {
+            const formData = this.get();
+            const dataToSave = {
+                categoryId: formData.categoryId,
+                materialTypeId: formData.materialTypeId
+            };
+            sessionStorage.setItem(this.sessionKey, JSON.stringify(dataToSave));
+        } catch (error) {
+            console.error('Failed to save to session:', error);
+        }
+    }
+
+    loadFromSession() {
+        try {
+            const savedData = sessionStorage.getItem(this.sessionKey);
+            if (savedData) {
+                const parsedData = JSON.parse(savedData);
+                if (parsedData.categoryId) {
+                    this.update('categoryId', parsedData.categoryId);
+
+                    // Trigger cost center update
+                    const selectedCategory = this.lookupData.categories?.find(
+                        cat => cat.id === parsedData.categoryId
+                    );
+                    if (selectedCategory) {
+                        this.update('costCenter', selectedCategory.costCenter);
+                    }
+                }
+
+                if (parsedData.materialTypeId) {
+                    this.update('materialTypeId', parsedData.materialTypeId);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load from session:', error);
+        }
+    }
+
+    clearSession() {
+        try {
+            sessionStorage.removeItem(this.sessionKey);
+        } catch (error) {
+            console.error('Failed to clear session:', error);
+        }
     }
 
     update(fieldName, value) {

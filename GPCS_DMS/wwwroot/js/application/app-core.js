@@ -1,42 +1,42 @@
 ﻿// app-core.js
 class AppCore {
-    constructor(){
-        if(AppCore.instance){
+    constructor() {
+        if (AppCore.instance) {
             return AppCore.instance;
         }
 
         AppCore.instance = this;
-        this.config ={
+        this.config = {
             baseURL: window.APP_CONFIG?.baseUrl || '',
         };
     }
 
     static Http = class {
-        static async _request(url, options = {}){
+        static async _request(url, options = {}) {
             const core = AppCore.instance;
             const fullUrl = url.startsWith('http') ? url : core.config.baseURL + url;
 
             const defaultOptions = {
                 credentials: 'include',
-                headers:{
+                headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 }
             };
 
-            try{
-                const response = await fetch(fullUrl, {...defaultOptions, ...options});
-                if(!response.ok){
+            try {
+                const response = await fetch(fullUrl, { ...defaultOptions, ...options });
+                if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
                 const contentType = response.headers.get('content-type');
-                if(contentType && contentType.includes('application/json')){
+                if (contentType && contentType.includes('application/json')) {
                     return await response.json();
                 }
 
                 return await response.text();
-            }catch (error){
+            } catch (error) {
                 console.error('Fetch error:', error);
                 throw error;
             }
@@ -50,18 +50,18 @@ class AppCore {
         static async handleApiResponse(requestPromise) {
             try {
                 const apiResponse = await requestPromise;
-                
+
                 // If response follows ApiResponse<T> format (PascalCase or camelCase)
                 if (apiResponse && typeof apiResponse === 'object') {
                     const isApiFormat = ('Success' in apiResponse) || ('success' in apiResponse);
-                    
+
                     if (isApiFormat) {
                         // Support both PascalCase (C# default) and camelCase (configured naming policy)
                         const successField = 'Success' in apiResponse ? 'Success' : 'success';
                         const dataField = 'Data' in apiResponse ? 'Data' : 'data';
                         const messageField = 'Message' in apiResponse ? 'Message' : 'message';
                         const errorsField = 'Errors' in apiResponse ? 'Errors' : 'errors';
-                        
+
                         return {
                             success: apiResponse[successField],
                             data: apiResponse[dataField] ?? null,
@@ -95,16 +95,16 @@ class AppCore {
         }
 
         static async post(url, data) {
-            return this.handleApiResponse(this._request(url, { 
-                method: 'POST', 
-                body: JSON.stringify(data) 
+            return this.handleApiResponse(this._request(url, {
+                method: 'POST',
+                body: JSON.stringify(data)
             }));
         }
 
         static async put(url, data) {
-            return this.handleApiResponse(this._request(url, { 
-                method: 'PUT', 
-                body: JSON.stringify(data) 
+            return this.handleApiResponse(this._request(url, {
+                method: 'PUT',
+                body: JSON.stringify(data)
             }));
         }
 
@@ -113,24 +113,24 @@ class AppCore {
         }
 
         static async patch(url, data) {
-            return this.handleApiResponse(this._request(url, { 
-                method: 'PATCH', 
-                body: JSON.stringify(data) 
+            return this.handleApiResponse(this._request(url, {
+                method: 'PATCH',
+                body: JSON.stringify(data)
             }));
         }
 
-        static async getCache(url ,ttl = AppCore.Cache.defaultTTL){
+        static async getCache(url, ttl = AppCore.Cache.defaultTTL) {
             const cacheKey = `GET:${url}`;
             const cached = AppCore.Cache.get(cacheKey);
 
-            if(cached){
+            if (cached) {
                 return cached;
             }
 
             const response = await this.handleApiResponse(
                 this._request(url, { method: 'GET' })
             );
-            if(response.success){
+            if (response.success) {
                 AppCore.Cache.set(cacheKey, response, ttl);
             }
             return response;
@@ -141,22 +141,22 @@ class AppCore {
             const core = AppCore.instance;
             const fullUrl = url.startsWith('http') ? url : core.config.baseURL + url;
 
-            try{
+            try {
                 const response = await fetch(fullUrl, {
                     method: 'POST',
                     body: formData,
                     credentials: 'include',
-                    headers:{
+                    headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                     }
                 });
 
-                if(!response.ok){
+                if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
                 const contentType = response.headers.get('content-type');
-                if(contentType && contentType.includes('application/json')){
+                if (contentType && contentType.includes('application/json')) {
                     const jsonResponse = await response.json();
                     return this.handleApiResponse(Promise.resolve(jsonResponse));
                 }
@@ -168,7 +168,7 @@ class AppCore {
                     errors: []
                 };
 
-            }catch (error){
+            } catch (error) {
                 console.error('Fetch error:', error);
                 return {
                     success: false,
@@ -183,22 +183,22 @@ class AppCore {
             const core = AppCore.instance;
             const fullUrl = url.startsWith('http') ? url : core.config.baseURL + url;
 
-            try{
+            try {
                 const response = await fetch(fullUrl, {
                     method: 'PUT',
                     body: formData,
                     credentials: 'include',
-                    headers:{
+                    headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                     }
                 });
 
-                if(!response.ok){
+                if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
                 const contentType = response.headers.get('content-type');
-                if(contentType && contentType.includes('application/json')){
+                if (contentType && contentType.includes('application/json')) {
                     const jsonResponse = await response.json();
                     return this.handleApiResponse(Promise.resolve(jsonResponse));
                 }
@@ -210,7 +210,7 @@ class AppCore {
                     errors: []
                 };
 
-            }catch (error){
+            } catch (error) {
                 console.error('Fetch error:', error);
                 return {
                     success: false,
@@ -219,6 +219,45 @@ class AppCore {
                     errors: [error.message || 'Unknown error']
                 };
             }
+        }
+
+        static async getBlob(url) {
+            const core = AppCore.instance;
+            const fullUrl = url.startsWith('http') ? url : core.config.baseURL + url;
+
+            const response = await fetch(fullUrl, {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return {
+                blob: await response.blob(),
+                contentType: response.headers.get('content-type'),
+                fileName: response.headers.get('x-filename') || this._getFileNameFromHeader(response)
+            };
+        }
+
+        static _getFileNameFromHeader(response) {
+            const disposition = response.headers.get('content-disposition');
+            if (!disposition) return null;
+
+            // 1️⃣ RFC 5987 (filename*=)
+            const utf8Match = disposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+            if (utf8Match && utf8Match[1]) {
+                return decodeURIComponent(utf8Match[1]);
+            }
+
+            // 2️⃣ fallback filename=""
+            const asciiMatch = disposition.match(/filename\s*=\s*"([^"]+)"/i);
+            if (asciiMatch && asciiMatch[1]) {
+                return asciiMatch[1];
+            }
+
+            return null;
         }
     }
 
@@ -289,12 +328,12 @@ class AppCore {
 
         static formatDate(date, format = 'dd/MM/YYYY') {
             const d = new Date(date);
-            if(isNaN(d.getTime())) return ''; // Invalid date
+            if (isNaN(d.getTime())) return ''; // Invalid date
 
             const year = d.getFullYear();
             const month = String(d.getMonth() + 1).padStart(2, '0');
             const day = String(d.getDate()).padStart(2, '0');
-            
+
             return format
                 .replace('YYYY', year)
                 .replace('MM', month)
@@ -302,11 +341,11 @@ class AppCore {
         }
 
         static isEmpty(value) {
-            return value === null || 
-                   value === undefined || 
-                   value === '' || 
-                   (Array.isArray(value) && value.length === 0) ||
-                   (typeof value === 'object' && Object.keys(value).length === 0);
+            return value === null ||
+                value === undefined ||
+                value === '' ||
+                (Array.isArray(value) && value.length === 0) ||
+                (typeof value === 'object' && Object.keys(value).length === 0);
         }
     };
 }

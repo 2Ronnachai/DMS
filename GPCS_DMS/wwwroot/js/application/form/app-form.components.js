@@ -5,6 +5,7 @@ class AppFormComponents{
         this.cacheConfig= {
             categories: { enabled: true, ttl: 10 * 60 * 1000 },
             materialTypes: { enabled: true, ttl: 10 * 60 * 1000 },
+            materialTypesWithoutCategoryId: { enabled: true, ttl: 10 * 60 * 1000 },
             suppliers: { enabled: true, ttl: 10 * 60 * 1000 },
             units: { enabled: true, ttl: 15 * 60 * 1000 }, 
             exchangeRates: { enabled: true, ttl: 5 * 60 * 1000 }, 
@@ -35,10 +36,9 @@ class AppFormComponents{
 
     async getMaterialTypeDataSource(categoryId = null) {
         const url = categoryId 
-            ? `materialtypes?categoryId=${categoryId}`
-            : this.appMain.endpoints.lookups.materialTypes;
-            
-        return await this._fetchWithCache(url, 'materialTypes');
+            ? this.appMain.endpoints.lookups.materialTypes(categoryId)
+            : this.appMain.endpoints.lookups.materialTypes();
+        return categoryId ? await this._fetchWithCache(url, 'materialTypes') : await this._fetchWithCache(url, 'materialTypesWithoutCategoryId');
     }
 
      async getSupplierDataSource() {
@@ -70,7 +70,7 @@ class AppFormComponents{
     }
 
     async getMaterialDataSource(categoryId, materialTypeId) {
-        const url = `materials?categoryId=${categoryId}&materialTypeId=${materialTypeId}`;
+        const url = this.appMain.endpoints.lookups.materials(categoryId, materialTypeId);
         return await this._fetchWithCache(url, 'materials');
     }
 

@@ -1,5 +1,5 @@
 class AppMain {
-    constructor(config = {}){
+    constructor(config = {}) {
         // Core dependencies
         this.core = appCore;
         this.http = Http;
@@ -30,44 +30,48 @@ class AppMain {
         this.applicationData = null;
 
         // API Endpoints
-        this.endpoints ={
+        this.endpoints = {
             loadPermissions: `applications/has-permission/`,
             loadHeaderData: (type) => `applications/workflow/${type}`,
-            lookups:{
-                units : 'units/lookups/',
-                suppliers : 'suppliers/lookups/',
-                categories : 'categories/lookups-purchaser/',
-                exchangeRates : 'exchangerates/lookups/',
-                groupOfGoods : 'groupofgoods/lookups/',
-                materialTypes : 'materialtypes/lookups/',
-                supplierPurchasers : 'supplierPurchasers/supplier-purchaser/'
+            lookups: {
+                units: 'units/lookups/',
+                suppliers: 'suppliers/lookups/',
+                categories: 'categories/lookups-purchaser/',
+                exchangeRates: 'exchangerates/lookups/',
+                groupOfGoods: 'groupofgoods/lookups/',
+                materialTypes: (categoryId) => categoryId ? `materialtypes/lookups?categoryId=${categoryId}` : 'materialtypes/lookups/',
+                supplierPurchasers: 'supplierPurchasers/supplier-purchaser/',
+                materials: (categoryId, materialTypeId) => `dataMaterials/filter/with-category-and-type?categoryId=${categoryId}&materialTypeId=${materialTypeId}`,
             },
-            applications:{
-                save: 'applications/save/',
-                submit: 'applications/submit/',
-                
+            applications: {
+                save: (id) => id ? `applications/${id}/save/` : 'applications/save/',
+                submit: (id) => id ? `applications/${id}/submit/` : 'applications/submit/',
+                approve: (id) => `applications/${id}/approve/`,
+                reject: (id) => `applications/${id}/reject/`,
+                return: (id) => `applications/${id}/return/`,
+                cancel: (id) => `applications/${id}/cancel/`
             },
-            fileAttachments:{
+            fileAttachments: {
                 download: (id) => `file-attachments/${id}/download/`,
-                preview : (id) => `file-attachments/${id}/preview/`
+                preview: (id) => `file-attachments/${id}/preview/`
             }
         };
 
         // Initialize core components
         this._init();
 
-        if(AppMain.instance){
+        if (AppMain.instance) {
             return AppMain.instance;
         }
         AppMain.instance = this;
     }
 
-    getDateFormat(){
+    getDateFormat() {
         return 'dd/MM/yyyy';
     }
 
-    async _init(){
-        try{
+    async _init() {
+        try {
             // Show initial loading
             const loadingId = this.loading.show('Initializing application...');
 
@@ -92,14 +96,14 @@ class AppMain {
             this.loading.hide();
 
             this.notification.success('Application initialized successfully.');
-        }catch(error){
+        } catch (error) {
             this.loading.hide();
             this.notification.error('Failed to initialize application: ' + error.message);
             console.error('Initialization error:', error);
         }
     }
 
-    async _loadInitialData(){
+    async _loadInitialData() {
         const promises = [];
         // Load permissions and mode
         promises.push(this._loadPermissions());
@@ -113,18 +117,18 @@ class AppMain {
         await Promise.all(promises);
     }
 
-    async _loadPermissions(){
-        try{
+    async _loadPermissions() {
+        try {
             const response = await this.http.get(this.endpoints.loadPermissions + `${this.applicationId || ''}`);
-            if(response && response.success){
+            if (response && response.success) {
                 this.permissions = response.data;
                 this._determineModeAndActions();
                 console.log('Permissions loaded:', this.permissions);
-            }else{
+            } else {
                 throw new Error('Failed to load permissions from server.');
             }
 
-        }catch(error){
+        } catch (error) {
             console.error('Failed to load permissions:', error);
             // Default to no permissions
             this.mode = 'view';
@@ -132,41 +136,41 @@ class AppMain {
         }
     }
 
-    _determineModeAndActions(){
+    _determineModeAndActions() {
         // Logic to determine mode and available actions based on permissions
         this.mode = this.permissions.mode; // e.g., 'create', 'edit', 'view', 'approve'
         this.avaiableActions = this.permissions.availableActions; // e.g., ['save', 'submit', 'approve']
     }
 
-    async _loadApplicationData(){
-        if(this.applicationType && !this.applicationId){
-            try{
+    async _loadApplicationData() {
+        if (this.applicationType && !this.applicationId) {
+            try {
                 const response = await this.http.get(this.endpoints.loadHeaderData(this.applicationType));
-                if(response && response.success){
+                if (response && response.success) {
                     this.applicationData = response.data ? response.data : response;
-                }else{
+                } else {
                     throw new Error('Failed to load application data from server.');
                 }
-            }catch(error){
+            } catch (error) {
                 console.error('Failed to load application data:', error);
             }
-        }else if(this.applicationId && this.applicationType){
-            try{
+        } else if (this.applicationId && this.applicationType) {
+            try {
                 const response = await this.http.get(this.endpoints.loadHeaderData(this.applicationType) + `/${this.applicationId}`);
-                if(response && response.success){
+                if (response && response.success) {
                     this.applicationData = response.data ? response.data : response;
-                }else{
+                } else {
                     throw new Error('Failed to load application data from server.');
                 }
-            }catch(error){
+            } catch (error) {
                 console.error('Failed to load application data:', error);
             }
-        }else{
+        } else {
             // Show default header for new application and change mode to view
         }
     }
 
-    async _initializeModules(){
+    async _initializeModules() {
         // Initialize action handler
         this.actionHandler = new AppButtonHandler(this);
         this.formComponents = new AppFormComponents(this);
@@ -181,7 +185,7 @@ class AppMain {
 
         // Initialize form module
         // Only Create mode and Edit mode require form initialization
-        if(this.mode === 'create' || this.mode === 'edit'){
+        if (this.mode === 'create' || this.mode === 'edit') {
             this.form = new AppForm(this, this.applicationData);
             await this.form.render();
         }
@@ -194,8 +198,8 @@ class AppMain {
         this.workflow.render();
     }
 
-    async reload(){
-        try{
+    async reload() {
+        try {
             const loadingId = this.loading.show('Reloading...');
             await this._loadInitialData();
 
@@ -205,44 +209,75 @@ class AppMain {
 
             this.loading.hide(loadingId);
             this.notification.success('Reloaded successfully.');
-        }catch(error){
+        } catch (error) {
             this.loading.hide();
             this.notification.error('Reload failed: ' + error.message);
         }
     }
 
-    getApplicationTypeDisplayName(){
+    getApplicationTypeDisplayName() {
         const typeMap = {
             'newmaterialsitems': 'New Materials & Items',
-            'newitem': 'New Item',
-            'edititem': 'Edit Item',
-            'deleteitem': 'Delete Item'
+            'newitems': 'New Item',
+            'edititems': 'Edit Item',
+            'deleteitems': 'Delete Item'
         };
         return typeMap[this.applicationType.toLowerCase()] || 'Application';
     }
 
-    onSubmitNewMaterialsItems(data){
+    async onSupplierChange(supplier) {
+        console.log('Supplier changed to:', supplier);
+
+        // Handle supplier change logic here
+        if (this.form && typeof this.form.onSupplierChange === 'function' &&
+            this.applicationType.toLowerCase() === 'edititems'
+        ) {
+            this.grid.reset();
+            await this.form.onSupplierChange(supplier);
+        }
+
+        // Handle supplier change logic here
+        if (this.applicationType.toLowerCase() === 'newitems') {
+            console.log('Notifying New Item Form of supplier change.');
+        }
+    }
+
+    onSubmitNewMaterialsItems(data) {
         // Handle submission logic for New Materials & Items
         // Add to datagrid in items section
         this.grid.addItems([data]);
         console.log('Submitted New Materials & Items:', data);
     }
 
-    onSubmitNewItems(data){
+    onSubmitNewItems(data) {
         // Handle submission logic for New Item
         // Add to datagrid in items section
+        this.grid.addItems([data]);
         console.log('Submitted New Item:', data);
     }
 
-    onSubmitEditItem(data){
+    onSubmitEditItem(data) {
         // Handle submission logic for Edit Item
         // Update datagrid in items section
         console.log('Submitted Edit Item:', data);
     }
 
-    onSubmitDeleteItem(data){
+    onSubmitDeleteItem(data) {
         // Handle submission logic for Delete Item
         // Update datagrid in items section
         console.log('Submitted Delete Item:', data);
+    }
+
+    isDataChanged() {
+        let isChanged = false;
+        if (this.header) {
+            isChanged = this.header.isDataChanged();
+        }
+
+        if (!isChanged && this.grid) {
+            isChanged = this.grid.isDataChanged();
+        }
+
+        return isChanged;
     }
 }

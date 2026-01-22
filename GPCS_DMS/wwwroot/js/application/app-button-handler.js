@@ -37,7 +37,7 @@ class AppButtonHandler {
                 this._logFormData(formData);
 
                 response = await this.http.putFormData(
-                    this.appMain.endpoints.applications.save + `${this.appMain.applicationId}` + (comment ? `?comment=${encodeURIComponent(comment)}` : ''),
+                    this.appMain.endpoints.applications.save(this.appMain.applicationId) + (comment ? `?comment=${encodeURIComponent(comment)}` : ''),
                     formData
                 );
 
@@ -52,7 +52,7 @@ class AppButtonHandler {
                 this._logFormData(formData);
 
                 response = await this.http.postFormData(
-                    this.appMain.endpoints.applications.save + (comment ? `?comment=${encodeURIComponent(comment)}` : ''),
+                    this.appMain.endpoints.applications.save() + (comment ? `?comment=${encodeURIComponent(comment)}` : ''),
                     formData
                 );
             }
@@ -75,13 +75,12 @@ class AppButtonHandler {
                 return false;
             }
 
-            this.notification.success('Changes saved successfully.');
-
             // Optional: redirect or update UI with new data
-            if (response.data && response.data.id && !this.appMain.applicationId) {
-                // New application created - optionally redirect
-                // window.location.href = `/application/${response.data.id}`;
-                console.log('New application created:', response.data);
+            if (response.data && response.data.id) {
+                this.notification.success('Changes saved successfully.');
+                this.appMain.applicationId = response.data.id;
+                this.appMain.mode = 'edit';
+                await this.appMain._initializeModules();
             }
             return true;
         } catch (error) {
@@ -105,95 +104,135 @@ class AppButtonHandler {
 
         if (comment === null) return; // User cancelled
 
-        // Validate header and grid data before submission
-        const isHeaderValid = await this.appMain.header.validate();
-        const isGridValid = await this.appMain.grid.validate();
+        const loadingId = this.loading.show('Submitting application...');
 
-        if (!isHeaderValid.isValid) {
-            if (isHeaderValid.brokenRules && isHeaderValid.brokenRules.length > 0) {
-                const errorMessage = isHeaderValid.brokenRules[0].message || 'Header validation failed.';
-                this.notification.error(errorMessage);
-            } else {
-                this.notification.error(`${isHeaderValid.message}`);
-            }
-            return;
-        }
+        try {
+            // Validate header and grid data before submission
+            const isHeaderValid = await this.appMain.header.validate();
+            const isGridValid = await this.appMain.grid.validate();
 
-        // Check grid validation
-        if (!isGridValid.isValid) {
-            if (isGridValid.brokenRules && isGridValid.brokenRules.length > 0) {
-                const errorMessage = isGridValid.brokenRules[0].message;
-                this.notification.error(errorMessage);
-            } else {
-                this.notification.error(`${isGridValid.message}`);
-            }
-            return;
-        }
-
-        let formData = null;
-        let response = null;
-
-        if (this.appMain.applicationId) {
-            // Update existing application
-            formData = this._getPrepareUpdateWithApplicationType();
-            if (!formData) {
-                this.notification.error('Failed to prepare data for submission.');
-                return;
-            }
-            this._logFormData(formData);
-
-            response = await this.http.putFormData(
-                this.appMain.endpoints.applications.submit + `${this.appMain.applicationId}` + (comment ? `?comment=${encodeURIComponent(comment)}` : ''),
-                formData
-            );
-        } else {
-            // Create new application
-            formData = this._getPrepareCreateWithApplicationType();
-
-            if (!formData) {
-                this.notification.error('Failed to prepare data for submission.');
+            if (!isHeaderValid.isValid) {
+                if (isHeaderValid.brokenRules && isHeaderValid.brokenRules.length > 0) {
+                    const errorMessage = isHeaderValid.brokenRules[0].message || 'Header validation failed.';
+                    this.notification.error(errorMessage);
+                } else {
+                    this.notification.error(`${isHeaderValid.message}`);
+                }
                 return;
             }
 
-            this._logFormData(formData);
-
-            response = await this.http.postFormData(
-                this.appMain.endpoints.applications.submit,
-                formData
-            );
-        }
-
-        if (!response || !response.success) {
-            const errorMessage = response?.message || 'Unknown error from server.';
-            const errors = response?.errors || [];
-            // Show detailed errors if available
-            if (errors.length > 0) {
-                this.dialog.alert({
-                    title: 'Submit Error',
-                    message: `${errorMessage}\n\n${errors.join('\n')}`,
-                    type: 'danger'
-                });
-            } else {
-                this.notification.error('Failed to submit application: ' + errorMessage);
+            // Check grid validation
+            if (!isGridValid.isValid) {
+                if (isGridValid.brokenRules && isGridValid.brokenRules.length > 0) {
+                    const errorMessage = isGridValid.brokenRules[0].message;
+                    this.notification.error(errorMessage);
+                } else {
+                    this.notification.error(`${isGridValid.message}`);
+                }
+                return;
             }
+
+            let formData = null;
+            let response = null;
+
+            if (this.appMain.applicationId) {
+                // Update existing application
+                formData = this._getPrepareUpdateWithApplicationType();
+                if (!formData) {
+                    this.notification.error('Failed to prepare data for submission.');
+                    return;
+                }
+                this._logFormData(formData);
+
+                response = await this.http.putFormData(
+                    this.appMain.endpoints.applications.submit(this.appMain.applicationId) + (comment ? `?comment=${encodeURIComponent(comment)}` : ''),
+                    formData
+                );
+            } else {
+                // Create new application
+                formData = this._getPrepareCreateWithApplicationType();
+
+                if (!formData) {
+                    this.notification.error('Failed to prepare data for submission.');
+                    return;
+                }
+
+                this._logFormData(formData);
+
+                response = await this.http.postFormData(
+                    this.appMain.endpoints.applications.submit(),
+                    formData
+                );
+            }
+
+            if (!response || !response.success) {
+                const errorMessage = response?.message || 'Unknown error from server.';
+                const errors = response?.errors || [];
+                // Show detailed errors if available
+                if (errors.length > 0) {
+                    this.dialog.alert({
+                        title: 'Submit Error',
+                        message: `${errorMessage}\n\n${errors.join('\n')}`,
+                        type: 'danger'
+                    });
+                } else {
+                    this.notification.error('Failed to submit application: ' + errorMessage);
+                }
+            }
+
+            // Optional: redirect or update UI with new data
+            if (response.data && response.data.id) {
+                this.notification.success(`Application submitted no. ${response.data.applicationNumber} successfully.`);
+                this.nevigateToHomePage();
+            }
+        } catch (error) {
+            console.error('Submit error:', error);
+            this.notification.error('Failed to submit application: ' + error.message);
+        }finally{
+            this.loading.hide(loadingId);
         }
-
-        this.notification.success('Application submitted successfully.');
-
-        // Optional: redirect or update UI with new data
-        if (response.data && response.data.id && !this.appMain.applicationId) {
-            // New application created - optionally redirect
-            // window.location.href = `/application/${response.data.id}`;
-            console.log('New application created:', response.data);
-        }
-
-        // Confirm data => Create or Update application
-        this.notification.info('Submit action triggered.');
     }
 
     async approve() {
-        // Confirm data only
-        this.notification.info('Approve action triggered.');
+        // Confirm data only not require comment
+        const comment = await this.dialog.prompt({
+            title: 'Approve Application',
+            message: 'Are you sure you want to approve the application?',
+            placeholder: 'Enter your comments (optional)',
+            type: 'confirm',
+            required: false
+        });
+
+        if (comment === null) return; // User cancelled
+        const loadingId = this.loading.show('Approving application...');
+        try{
+            const response = await this.http.put(
+                this.appMain.endpoints.applications.approve(this.appMain.applicationId) + (comment ? `?comment=${encodeURIComponent(comment)}` : '')
+            );
+
+            if (!response || !response.success) {
+                const errorMessage = response?.message || 'Unknown error from server.';
+                const errors = response?.errors || [];
+                // Show detailed errors if available
+                if (errors.length > 0) {
+                    this.dialog.alert({
+                        title: 'Approve Error',
+                        message: `${errorMessage}\n\n${errors.join('\n')}`,
+                        type: 'danger'
+                    });
+                } else {
+                    this.notification.error('Failed to approve application: ' + errorMessage);
+                }
+            }
+
+            this.notification.success(`Application no. ${this.appMain.applicationData.applicationNumber} approved successfully.`);
+            this.nevigateToHomePage();
+        }catch(error){
+            console.error('Approve error:', error);
+            this.notification.error('Failed to approve application: ' + error.message);
+        }finally{
+            this.loading.hide(loadingId);
+        }
     }
 
     async reject() {
@@ -203,6 +242,49 @@ class AppButtonHandler {
 
     async return() {
         // Return with comment
+        const comment = await this.dialog.prompt({
+            title: 'Return Application',
+            message: `Please provide a reason for returning the application: </br>
+               <strong>${this.appMain.applicationData.applicationNumber ? ' ' + this.appMain.applicationData.applicationNumber : ''}</strong>`,
+            placeholder: 'Enter your comments here...',
+            type: 'confirm',
+            required: true
+        });
+
+        if (comment === null) return; // User cancelled
+
+        const loadingId = this.loading.show('Returning application...');
+        try{
+            const response = await this.http.put(
+                this.appMain.endpoints.applications.return(this.appMain.applicationId) + `?comment=${encodeURIComponent(comment)}`
+            );
+
+            if (!response || !response.success) {
+                const errorMessage = response?.message || 'Unknown error from server.';
+                const errors = response?.errors || [];
+                // Show detailed errors if available
+                if (errors.length > 0) {
+                    this.dialog.alert({
+                        title: 'Return Error',
+                        message: `${errorMessage}\n\n${errors.join('\n')}`,
+                        type: 'danger'
+                    });
+                } else {
+                    this.notification.error('Failed to return application: ' + errorMessage);
+                }
+                return;
+            }
+
+            this.notification.success(`Application no. ${this.appMain.applicationData.applicationNumber} returned successfully.`);
+            this.nevigateToHomePage();
+
+        }catch(error){
+            console.error('Return error:', error);
+            this.notification.error('Failed to return application: ' + error.message);
+        }finally{
+            this.loading.hide(loadingId);
+        }
+
         this.notification.info('Return action triggered.');
     }
 
@@ -212,13 +294,35 @@ class AppButtonHandler {
     }
 
     async back() {
-        // Navigate back to previous page
-        this.notification.info('Back action triggered.');
+        // Compare this.appMain.applicationId call api check data changed or not with current data
+        // If changed, prompt confirm to leave this page or not
+        const isDataChanged = this.appMain.isDataChanged();
+
+        if (isDataChanged) {
+            const confirmLeave = await this.dialog.confirm({
+                title: 'Unsaved Changes',
+                message: 'You have unsaved changes. Are you sure you want to leave this page?',
+                type: 'confirm'
+            });
+
+            if (!confirmLeave) {
+                return; // User chose to stay on the page
+            }
+        }
+
+        this.nevigateToHomePage();
+    }
+
+    nevigateToHomePage() {
+        // Navigate back to previous page or dashboard => window.APP_CONFIG.host
+        window.location.href = window.APP_CONFIG.host;
     }
 
     _getPrepareCreateWithApplicationType() {
         switch (this.appMain.applicationType.toLowerCase()) {
             case 'newmaterialsitems':
+                return this.prepareCreateNewMaterialItem();
+            case 'newitems':
                 return this.prepareCreateNewMaterialItem();
             default:
                 this.notification.warning('Prepare action not defined for application type: ' + this.appMain.applicationType);
@@ -229,6 +333,8 @@ class AppButtonHandler {
     _getPrepareUpdateWithApplicationType() {
         switch (this.appMain.applicationType.toLowerCase()) {
             case 'newmaterialsitems':
+                return this.prepareUpdateNewMaterialItem();
+            case 'newitems':
                 return this.prepareUpdateNewMaterialItem();
             default:
                 this.notification.warning('Prepare action not defined for application type: ' + this.appMain.applicationType);
@@ -330,7 +436,7 @@ class AppButtonHandler {
             });
         }
 
-        if(headerData.deletedAttachmentIds && headerData.deletedAttachmentIds.length > 0){
+        if (headerData.deletedAttachmentIds && headerData.deletedAttachmentIds.length > 0) {
             headerData.deletedAttachmentIds.forEach((id) => {
                 formData.append('DeletedAttachmentIds', id);
             });
@@ -344,7 +450,7 @@ class AppButtonHandler {
 
     _gridDataToFormData(gridData, formData) {
         gridData.forEach((material, materialIndex) => {
-            if(material.id){
+            if (material.id) {
                 formData.append(`materials[${materialIndex}].id`, material.id || '');
             }
             // Material Properties
@@ -356,19 +462,19 @@ class AppButtonHandler {
             formData.append(`materials[${materialIndex}].minimumOrder`, material.minimumOrder || 1);
             formData.append(`materials[${materialIndex}].costCenter`, material.costCenter || '');
 
-            if(material.runningNumber){
-                formData.append(`materials[${materialIndex}].runningNumber`, material.runningNumber || '');
+            if (material.materialRunningNumber) {
+                formData.append(`materials[${materialIndex}].materialRunningNumber`, material.materialRunningNumber || '');
             }
 
-            if (material.code) {
-                formData.append(`materials[${materialIndex}].code`, material.code);
+            if (material.materialCode) {
+                formData.append(`materials[${materialIndex}].materialCode`, material.materialCode);
             }
 
             // Nested Item Properties
             if (material.item) {
                 const item = material.item;
 
-                if(item.id){
+                if (item.id) {
                     formData.append(`materials[${materialIndex}].item.id`, item.id || '');
                 }
 
@@ -383,12 +489,12 @@ class AppButtonHandler {
                 formData.append(`materials[${materialIndex}].item.quotationExpiryDate`, new Date(item.quotationExpiryDate).toISOString());
                 formData.append(`materials[${materialIndex}].item.groupOfGoods`, item.groupOfGoods || '');
 
-                if (item.runningNumber) {
-                    formData.append(`materials[${materialIndex}].item.runningNumber`, item.runningNumber || '');
+                if (item.itemRunningNumber) {
+                    formData.append(`materials[${materialIndex}].item.itemRunningNumber`, item.itemRunningNumber || '');
                 }
 
-                if (item.code) {
-                    formData.append(`materials[${materialIndex}].item.code`, item.code);
+                if (item.itemCode) {
+                    formData.append(`materials[${materialIndex}].item.itemCode`, item.itemCode);
                 }
             }
         });

@@ -243,14 +243,14 @@ class AppHeader {
                             reevaluate: true,
                             validationCallback: (options) => {
                                 const hasSupplier = this.formInstance?.getEditor('supplierCode')?.option('value');
-                                
+
                                 if (!hasSupplier) {
                                     return true;
                                 }
-                                
+
                                 const hasQuotation = options.value && options.value.trim() !== '';
                                 const hasAttachment = this._getAllFiles().length > 0;
-                                
+
                                 return hasQuotation || hasAttachment;
                             },
                             message: 'Please provide quotation URL or attach files'
@@ -278,26 +278,60 @@ class AppHeader {
                             searchEnabled: true,
                             searchMode: 'contains',
                             searchExpr: ['name', 'code'],
+                            showClearButton: true,
                             onValueChanged: (e) => {
-                                if (this.isUpdatingFromQuotation) return;
+                                if (this.isUpdatingFromQuotation) {
+                                    return;
+                                }
+
+                                if (this.isUpdatingFromSupplier) {
+                                    return;
+                                }
 
                                 this.isUpdatingFromSupplier = true;
 
-                                const selectedItem = e.component.option('selectedItem');
-                                this.formInstance.updateData({
-                                    supplierName: selectedItem ? selectedItem.name.trim() : ''
-                                });
+                                try {
+                                    const selectedItem = e.component.option('selectedItem');
 
-                                // Clear quotationUrl when supplier changes
-                                const currentQuotation = this.formInstance.getEditor('quotationUrl')?.option('value');
-                                if (currentQuotation) {
-                                    this._clearQuotation();
-                                    this.appMain.notification.info('Quotation cleared due to supplier change.');
+                                    // Update supplier name
+                                    this.formInstance.updateData({
+                                        supplierName: selectedItem ? selectedItem.name.trim() : ''
+                                    });
+
+                                    // Clear quotation URL if exists
+                                    const currentQuotation = this.formInstance.getEditor('quotationUrl')?.option('value');
+                                    if (currentQuotation) {
+                                        // Clear quotation without triggering flags
+                                        const previousFlag = this.isUpdatingFromQuotation;
+                                        this.isUpdatingFromQuotation = true;
+
+                                        this.formInstance.updateData('quotationUrl', '');
+                                        this._updateQuotationButtonVisibility();
+
+                                        // Reset effective date
+                                        const effectiveDateEditor = this.formInstance.getEditor('effectiveDate');
+                                        if (effectiveDateEditor && effectiveDateEditor.option('readOnly')) {
+                                            effectiveDateEditor.option({
+                                                value: null,
+                                                readOnly: false,
+                                                stylingMode: 'filled'
+                                            });
+                                        }
+
+                                        this.isUpdatingFromQuotation = previousFlag;
+
+                                        this.appMain.notification.info('Quotation cleared due to supplier change.');
+                                    }
+
+                                    // Revalidate form
+                                    this._revalidateForm();
+
+                                    // Notify parent
+                                    this.appMain.onSupplierChange(selectedItem);
+
+                                } finally {
+                                    this.isUpdatingFromSupplier = false;
                                 }
-
-                                this.isUpdatingFromSupplier = false;
-
-                                this._revalidateForm();
                             }
                         }),
                         validationRules: [{
@@ -624,10 +658,8 @@ class AppHeader {
     }
 
     async _openQuotationSelector() {
-        // const supplierCode = this.formInstance.getEditor('supplierCode')?.option('value');
-        // const supplierName = this.formInstance.getEditor('supplierName')?.option('value');
-        const supplierCode = null;
-        const supplierName = 'Nikon Thailand Co., Ltd.';
+        const supplierCode = this.formInstance.getEditor('supplierCode')?.option('value');
+        const supplierName = this.formInstance.getEditor('supplierName')?.option('value');
 
         const displayName = supplierCode && supplierName
             ? `${supplierCode} : ${supplierName}`
@@ -659,6 +691,11 @@ class AppHeader {
             this.formInstance.updateData({
                 supplierCode: quotation.vendorCode || '',
                 supplierName: quotation.vendorName || ''
+            });
+
+            this.appMain.onSupplierChange({
+                code: quotation.vendorCode,
+                name: quotation.vendorName
             });
 
             // Set supplier to readonly
@@ -728,6 +765,8 @@ class AppHeader {
     }
 
     _clearQuotation() {
+        this.isUpdatingFromQuotation = true;
+
         this.formInstance.updateData({ quotationUrl: '' });
         this._updateQuotationButtonVisibility();
 
@@ -745,6 +784,10 @@ class AppHeader {
             effectiveDateEditor.option('readOnly', false);
             effectiveDateEditor.option('stylingMode', 'filled');
         }
+
+        this.formInstance.updateData('supplierName', '');
+
+        this.isUpdatingFromQuotation = false;
     }
 
     _getAllFiles() {
@@ -782,26 +825,19 @@ class AppHeader {
             window.open(url, '_blank');
             setTimeout(() => URL.revokeObjectURL(url), 1000);
         } else {
-            try{
+            try {
                 const response = await this.appMain.http.get(
                     this.appMain.endpoints.fileAttachments.preview(data.id)
                 );
 
-                if(!response || !response.data){
+                if (!response || !response.data) {
                     this.appMain.notification.error('Failed to preview file.');
                     return;
                 }
 
-                const fileInfo = response.data;
-                if(!fileInfo || !fileInfo.isPreviewable){
-                    this.appMain.notification.error('This file type cannot be previewed.');
-                    return;
-                }
-
-                window.open(
-                    this.appMain.endpoints.fileAttachments.getPreviewUrl(data.id), '_blank'
-                );
-            }catch(error){
+                const preViewUtl = `${window.APP_CONFIG?.baseUrl}${this.appMain.endpoints.fileAttachments.preview(data.id)}`;
+                window.open(preViewUtl, '_blank');
+            } catch (error) {
                 this.appMain.notification.error('Failed to preview file.');
             }
         }
@@ -816,25 +852,29 @@ class AppHeader {
             link.download = data.name;
             link.click();
             URL.revokeObjectURL(url);
-        } else {
-            try{
-                this.appMain.loading.show('Downloading file...');
-                const response = await this.appMain.http.get(
-                    this.appMain.endpoints.fileAttachments.download(data.id),
-                    { responseType: 'blob' }
-                );
-                this.appMain.loading.hide();
-                const url = URL.createObjectURL(response.data);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = data.name;
-                link.click();
-                URL.revokeObjectURL(url);
-                this.appMain.notification.success('File downloaded successfully.');
-            }catch(error){
-                this.appMain.notification.error('Failed to download file.');
-                this.appMain.loading.hide();
-            }
+            return;
+        }
+
+        try {
+            this.appMain.loading.show('Downloading file...');
+
+            const response = await this.appMain.http.getBlob(
+                this.appMain.endpoints.fileAttachments.download(data.id)
+            );
+
+            const url = URL.createObjectURL(response.blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = response.fileName || data.fileName;
+            link.target = '_self';
+
+            link.click();
+            URL.revokeObjectURL(url);
+            this.appMain.notification.success('File downloaded successfully.');
+        } catch (error) {
+            this.appMain.notification.error('Failed to download file.');
+        } finally {
+            this.appMain.loading.hide();
         }
     }
 
@@ -911,20 +951,20 @@ class AppHeader {
 
         // 1. Validate form
         const formValidation = this.formInstance.validate();
-        
-        // 2. ตรวจสอบว่ามี error อะไรบ้าง
+
+        // 2. Check if there are errors other than quotationUrl
         const hasOtherErrors = formValidation.brokenRules?.some(rule => {
             const field = rule.validator?.element?.dataset?.field;
             return field && field !== 'quotationUrl';
         });
-        
-        // 3. ถ้ามี error อื่นๆ (ไม่ใช่ quotationUrl) ให้ scroll ไปที่นั่นก่อน
+
+        // 3. If there are other errors (not quotationUrl), scroll to the first one
         if (hasOtherErrors) {
             this._scrollToFirstNonQuotationError();
             return formValidation;
         }
-        
-        // 4. ถ้า error แค่ quotationUrl หรือไม่มี error เลย ให้ validate business rules
+
+        // 4. If there are only quotationUrl errors or no errors at all, validate business rules
         return this._validateBusinessRules();
     }
 
@@ -939,25 +979,26 @@ class AppHeader {
                     block: 'center'
                 });
             }
-            
+
             return this._createValidationResult(
                 false,
                 'Please select a supplier',
                 'required'
             );
         }
-        
+
         // 2. Validate Quotation OR Attachment
         const quotationUrl = this._getQuotationUrl();
         const allFiles = this._getAllFiles();
-        
-        if (quotationUrl || allFiles.length > 0) {
-            return this._createValidationResult(true);
+        if (this.appMain.applicationType.toLowerCase() !== 'deleteitems') {
+            if (quotationUrl || allFiles.length > 0) {
+                return this._createValidationResult(true);
+            }
+
+            // 3. Show errors
+            this._showQuotationAndAttachmentErrors();
         }
-        
-        // 3. Show errors
-        this._showQuotationAndAttachmentErrors();
-        
+
         return this._createValidationResult(
             false,
             'Please provide either a Quotation URL or attach at least one file',
@@ -971,7 +1012,7 @@ class AppHeader {
         if (quotationEditor) {
             const $quotationField = $(quotationEditor.element()).closest('.dx-field-item');
             $quotationField.addClass('dx-invalid');
-            
+
             // Add error message if not exists
             if (!$quotationField.find('.dx-invalid-message').length) {
                 $quotationField.append(`
@@ -986,15 +1027,15 @@ class AppHeader {
             // Auto remove quotation error after 5 seconds
             setTimeout(() => {
                 $quotationField.removeClass('dx-invalid');
-                $quotationField.find('.dx-invalid-message-auto').fadeOut(300, function() {
+                $quotationField.find('.dx-invalid-message-auto').fadeOut(300, function () {
                     $(this).remove();
                 });
             }, 5000);
         }
-        
+
         // 2. Highlight File Upload Section
         this._highlightFileSection();
-        
+
         // 3. Scroll to quotation field 
         const $quotationField = $(this.container).find('[data-field="quotationUrl"]');
         if ($quotationField.length) {
@@ -1007,10 +1048,10 @@ class AppHeader {
 
     _highlightFileSection() {
         const $fileSection = $(this.container).find('.file-upload-section');
-        
+
         // Add validation error styling
         $fileSection.addClass('validation-error');
-        
+
         // Add error message if not exists
         if (!$fileSection.find('.file-section-error').length) {
             $fileSection.prepend(`
@@ -1021,11 +1062,11 @@ class AppHeader {
                 </div>
             `);
         }
-        
+
         // Auto remove after 5 seconds
         setTimeout(() => {
             $fileSection.removeClass('validation-error');
-            $fileSection.find('.file-section-error').fadeOut(300, function() {
+            $fileSection.find('.file-section-error').fadeOut(300, function () {
                 $(this).remove();
             });
         }, 5000);
@@ -1039,7 +1080,7 @@ class AppHeader {
             $quotationField.removeClass('dx-invalid');
             $quotationField.find('.dx-invalid-message').remove();
         }
-        
+
         // Clear file section error
         const $fileSection = $(this.container).find('.file-upload-section');
         $fileSection.removeClass('validation-error');
@@ -1048,20 +1089,20 @@ class AppHeader {
 
     _hasFieldError(fieldName, validationResult) {
         if (!validationResult || !validationResult.brokenRules) return false;
-        
-        return validationResult.brokenRules.some(rule => 
+
+        return validationResult.brokenRules.some(rule =>
             rule.validator?.element?.dataset?.field === fieldName
         );
     }
 
     _scrollToFirstNonQuotationError() {
         const $errors = $(this.container).find('.dx-invalid');
-        
+
         for (let i = 0; i < $errors.length; i++) {
             const $error = $errors.eq(i);
             const $field = $error.closest('.dx-field-item');
             const dataField = $field.find('[data-field]').attr('data-field');
-            
+
             if (dataField !== 'quotationUrl') {
                 $error[0].scrollIntoView({
                     behavior: 'smooth',
@@ -1094,7 +1135,7 @@ class AppHeader {
                 brokenRules: []
             };
         }
-        
+
         return {
             isValid: false,
             brokenRules: [{
@@ -1163,6 +1204,20 @@ class AppHeader {
                 total: this._getAllFiles().length
             }
         };
+    }
+
+    isDataChanged() {
+        if (!this.formInstance) return false;
+
+        // 1. Check form data changes
+        const currentData = this.formInstance.option('formData');
+        const originalData = this.data;
+        const isFormDataChanged = JSON.stringify(currentData) !== JSON.stringify(originalData);
+
+        // 2. Check file attachment changes
+        const hasNewFiles = this.pendingFiles.length > 0;
+        const hasDeletedFiles = this.deletedFileIds.length > 0;
+        return isFormDataChanged || hasNewFiles || hasDeletedFiles;
     }
 
     update(data) {

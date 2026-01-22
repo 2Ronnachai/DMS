@@ -19,12 +19,17 @@ class AppForm{
         }
     }
 
+    clearSession(){
+        const sessionKey = `${this.appMain.applicationType.toLowerCase()}_lastSelected`;
+        sessionStorage.removeItem(sessionKey);
+    }
+
     _createForm(){
         const formMap = {
             'newmaterialsitems': NewMaterialItemsForm,
-            'newitem': NewItemForm,
-            'edititem': EditItemForm,
-            'deleteitem': DeleteItemForm
+            'newitems': NewItemForm,
+            'edititems': EditItemForm,
+            'deleteitems': DeleteItemForm
         };
         
         this._renderHeader();
@@ -48,6 +53,12 @@ class AppForm{
         `;
         this.container.append(formContainer);
         this.container = formContainer.querySelector('#formInstanceContainer');
+    }
+
+    async onSupplierChange(supplier){
+        if(this.formInstance && typeof this.formInstance.onSupplierChange === 'function'){
+            await this.formInstance.onSupplierChange(supplier);
+        }
     }
 
     _renderNewMaterialsItemsForm(){

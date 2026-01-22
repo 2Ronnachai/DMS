@@ -24,7 +24,6 @@ class AppHeaderPopup {
         } else{
             this._updateInfoSection();
             this.popupInstance.show();
-            await this._loadQuotations();
         }
     }
 

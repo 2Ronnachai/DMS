@@ -27,7 +27,8 @@
             qcsUrl: {
                 view: "@Configuration["ApiSettings:QCSUrl:View"]",
                 service: "@Configuration["ApiSettings:QCSUrl:Service"]"
-            }
+            },
+            host: "@Url.Action("Index", "Application")"
         };
 
         if(!window.APP_CONFIG.baseUrl){
@@ -40,7 +41,7 @@
         <nav class="navbar navbar-expand-sm">
             <div class="container-fluid">
                 <!-- Brand -->
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                <a class="navbar-brand" asp-area="" asp-controller="Application" asp-action="Index">
                     DMS
                 </a>
                 
@@ -58,7 +59,7 @@
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">
+                            <a class="nav-link" asp-area="" asp-controller="Application" asp-action="Index">
                                 Home
                             </a>
                         </li>

@@ -1,1 +1,26 @@
-﻿
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
+@section Styles {
+
+}
+<div class="container">
+    <h1 class="display-4 text-center mt-5">Dashboard</h1>
+    <p class="text-center">This is the dashboard page of the application.</p>
+    <div id="create-application-buttons-container"> </div>
+    <div id="application-list-container">
+        <!-- Application list or dashboard content can go here -->
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/application/app-dashboard.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async function() {
+            // You can add any page-specific JavaScript here if needed
+            // Using appDashboard to load dashboard data
+            const appDashboard = new AppDashboard();
+            await appDashboard.init();
+        });
+    </script>
+}
