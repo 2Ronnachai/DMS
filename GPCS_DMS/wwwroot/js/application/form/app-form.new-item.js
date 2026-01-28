@@ -73,108 +73,13 @@ class NewItemForm {
     }
 
     _renderNewItemsForm() {
-        // Helper: Description Validation Rules
-        const getDescriptionValidationRules = (fieldName) => {
-            return [
-                {
-                    type: 'required',
-                    message: `${fieldName} is required`
-                },
-                {
-                    type: 'stringLength',
-                    min: 3,
-                    max: 50,
-                    message: 'Description must be between 3 and 50 characters'
-                },
-                {
-                    type: 'custom',
-                    validationCallback: (e) => {
-                        if (!e.value) return true;
-
-                        if (/['"]/.test(e.value)) {
-                            e.rule.message = 'Single quotes (\') and double quotes (") are not allowed';
-                            return false;
-                        }
-
-                        if (!/^[a-zA-Z0-9!%&()*\-./#:=@_ ]+$/.test(e.value)) {
-                            e.rule.message = 'Only letters, numbers and special characters (!%&()*-./#:=@_) are allowed';
-                            return false;
-                        }
-
-                        return true;
-                    }
-                }
-            ];
-        };
-
-        // Helper: Number Validation Rules
-        const getNumberValidationRules = (fieldName, isRequired = true, minValue = null, maxValue = null) => {
-            const rules = [];
-
-            if (isRequired) {
-                rules.push({
-                    type: 'required',
-                    message: `${fieldName} is required`
-                });
-            }
-
-            if (minValue !== null && maxValue !== null) {
-                rules.push({
-                    type: 'numeric',
-                    message: `${fieldName} must be a valid number`
-                });
-                rules.push({
-                    type: 'range',
-                    min: minValue,
-                    max: maxValue,
-                    message: `${fieldName} must be between ${minValue} and ${maxValue}`
-                });
-            } else if (minValue !== null) {
-                rules.push({
-                    type: 'numeric',
-                    message: `${fieldName} must be a valid number`
-                });
-                rules.push({
-                    type: 'range',
-                    min: minValue,
-                    message: `${fieldName} must be at least ${minValue}`
-                });
-            } else if (maxValue !== null) {
-                rules.push({
-                    type: 'numeric',
-                    message: `${fieldName} must be a valid number`
-                });
-                rules.push({
-                    type: 'range',
-                    max: maxValue,
-                    message: `${fieldName} must be at most ${maxValue}`
-                });
-            }
-            return rules;
-        };
-
-        // Helper: Currency Format
-        const getCurrencyFormat = (currency = 'THB', precision = 4) => {
-            return {
-                type: 'fixedPoint',
-                precision: precision,
-                formatter: (value) => {
-                    if (value === null || value === undefined) return '';
-                    return `${value.toLocaleString('en-US', {
-                        minimumFractionDigits: precision,
-                        maximumFractionDigits: precision
-                    })} ${currency}`;
-                }
-            };
-        };
-
         // Cascading lookup Category and Material Type => Material
         const formConfig = {
             formData: {
                 categoryId: null,
                 materialTypeId: null,
                 materialId: null,
-                minimunOrder: 1,
+                minimumOrder: 1,
                 conversionRate: 1,
                 itemUnitPrice: 0,
                 moq: 1,
@@ -299,14 +204,14 @@ class NewItemForm {
                                         this.update('materialDescription', selectedMaterial ? selectedMaterial.description : '');
                                         this.update('materialUnit', selectedMaterial ? selectedMaterial.unit : '');
                                         this.update('materialUnitPrice', selectedMaterial ? selectedMaterial.unitPrice : 0);
-                                        this.update('minimunOrder', selectedMaterial ? selectedMaterial.minimumOrder : 1);
+                                        this.update('minimumOrder', selectedMaterial ? selectedMaterial.minimumOrder : 1);
                                         this.update('costCenter', selectedMaterial ? selectedMaterial.costCenter : '');
                                         this.update('materialRunningNumber', selectedMaterial ? selectedMaterial.runningNumber : null);
                                     } else {
                                         this.update('materialDescription', '');
                                         this.update('materialUnit', '');
                                         this.update('materialUnitPrice', 0);
-                                        this.update('minimunOrder', 1);
+                                        this.update('minimumOrder', 1);
                                         this.update('costCenter', '');
                                         this.update('materialRunningNumber', null);
                                     }
@@ -371,11 +276,11 @@ class NewItemForm {
                             editorOptions: {
                                 readOnly: true,
                                 stylingMode: 'outlined',
-                                format: getCurrencyFormat('THB', 4)
+                                format: AppValidation.getCurrencyFormat('THB', 4)
                             }
                         },
                         {
-                            dataField: 'minimunOrder',
+                            dataField: 'minimumOrder',
                             label: () => {
                                 return {
                                     text: 'Minimum Order Quantity',
@@ -427,7 +332,7 @@ class NewItemForm {
                                 stylingMode: 'filled',
                                 showClearButton: true
                             },
-                            validationRules: getDescriptionValidationRules('Item Description')
+                            validationRules: AppValidation.getDescriptionValidationRules('Item Description')
                         },
                         {
                             dataField: 'itemUnit',
@@ -465,7 +370,7 @@ class NewItemForm {
                                 stylingMode: 'filled',
                                 showClearButton: true
                             },
-                            validationRules: getNumberValidationRules('Conversion Rate', true, 1)
+                            validationRules: AppValidation.getNumberValidationRules('Conversion Rate', true, 1)
                         },
                         {
                             dataField: 'moq',
@@ -478,7 +383,7 @@ class NewItemForm {
                                 stylingMode: 'filled',
                                 showClearButton: true
                             },
-                            validationRules: getNumberValidationRules('MOQ', true, 1)
+                            validationRules: AppValidation.getNumberValidationRules('MOQ', true, 1)
                         },
                         {
                             dataField: 'lotSize',
@@ -491,7 +396,7 @@ class NewItemForm {
                                 stylingMode: 'filled',
                                 showClearButton: true
                             },
-                            validationRules: getNumberValidationRules('Lot Size', true, 1)
+                            validationRules: AppValidation.getNumberValidationRules('Lot Size', true, 1)
                         },
                         {
                             dataField: 'itemUnitPrice',
@@ -503,9 +408,9 @@ class NewItemForm {
                                 placeholder: 'Enter Unit Price',
                                 stylingMode: 'filled',
                                 showClearButton: true,
-                                format: getCurrencyFormat('THB', 4),
+                                format: AppValidation.getCurrencyFormat('THB', 4),
                             },
-                            validationRules: getNumberValidationRules('Unit Price', true, 0.0001)
+                            validationRules: AppValidation.getNumberValidationRules('Unit Price', true, 0.0001)
                         },
                         {
                             dataField: 'currency',
@@ -528,7 +433,7 @@ class NewItemForm {
                                     if (e.value) {
                                         const unitPriceEditor = this.formInstance.getEditor('itemUnitPrice');
                                         if (unitPriceEditor) {
-                                            unitPriceEditor.option('format', getCurrencyFormat(e.value, 4));
+                                            unitPriceEditor.option('format', AppValidation.getCurrencyFormat(e.value, 4));
                                         }
                                     }
                                 }
@@ -595,7 +500,7 @@ class NewItemForm {
                                     e.customItem = (!isNaN(num) && num >= 1) ? num : null;
                                 }
                             },
-                            validationRules: getNumberValidationRules('Lead Time', true, 1)
+                            validationRules: AppValidation.getNumberValidationRules('Lead Time', true, 1)
                         },
                         {
                             dataField: 'groupOfGoods',
@@ -638,7 +543,7 @@ class NewItemForm {
     }
 
     //Method to save current selected values
-    saveToSession(){
+    saveToSession() {
         if (this.formInstance) {
             const formData = this.formInstance.option('formData');
             const lastSelectedValues = {
@@ -649,8 +554,8 @@ class NewItemForm {
         }
     }
 
-    async loadFromSession(){
-        try{
+    async loadFromSession() {
+        try {
             const saved = sessionStorage.getItem(this.sessionKey);
             if (!saved) return;
 
@@ -661,9 +566,9 @@ class NewItemForm {
             if (data.categoryId) {
                 this.update('categoryId', data.categoryId);
 
-                if(data.materialTypeId){
+                if (data.materialTypeId) {
                     const materialTypes = await this.appForm.appMain.formComponents.getMaterialTypeDataSource(data.categoryId);
-                    
+
                     const materialTypeEditor = this.formInstance.getEditor('materialTypeId');
                     materialTypeEditor.option('dataSource', {
                         store: materialTypes,
@@ -674,7 +579,7 @@ class NewItemForm {
                     this.update('materialTypeId', data.materialTypeId);
                 }
             }
-        }catch(error){
+        } catch (error) {
             console.error('Failed to load from session:', error);
         }
     }
@@ -714,7 +619,7 @@ class NewItemForm {
             materialDescription: formData.materialDescription,
             materialUnit: formData.materialUnit,
             materialUnitPrice: formData.materialUnitPrice,
-            minimunOrder: formData.minimunOrder,
+            minimumOrder: formData.minimumOrder,
             costCenter: formData.costCenter,
             materialRunningNumber: formData.materialRunningNumber,
             materialCode: formData.materialCode,

@@ -6,6 +6,7 @@ class AppFormComponents{
             categories: { enabled: true, ttl: 10 * 60 * 1000 },
             materialTypes: { enabled: true, ttl: 10 * 60 * 1000 },
             materialTypesWithoutCategoryId: { enabled: true, ttl: 10 * 60 * 1000 },
+            materialTypesWithoutSupplier: { enabled: true, ttl: 10 * 60 * 1000 },
             suppliers: { enabled: true, ttl: 10 * 60 * 1000 },
             units: { enabled: true, ttl: 15 * 60 * 1000 }, 
             exchangeRates: { enabled: true, ttl: 5 * 60 * 1000 }, 
@@ -26,10 +27,10 @@ class AppFormComponents{
         return response.success ? response.data : [];
     }
 
-    async getCategoryDataSource(supplierId = null) {
-        const url = supplierId 
-            ? `categories?supplierId=${supplierId}`
-            : this.appMain.endpoints.lookups.categories;
+    async getCategoryDataSource(supplierCode = null) {
+        const url = supplierCode 
+            ? this.appMain.endpoints.lookups.category.supplier(supplierCode)
+            : this.appMain.endpoints.lookups.category.purchaser;
   
         return await this._fetchWithCache(url, 'categories');
     }
@@ -41,7 +42,12 @@ class AppFormComponents{
         return categoryId ? await this._fetchWithCache(url, 'materialTypes') : await this._fetchWithCache(url, 'materialTypesWithoutCategoryId');
     }
 
-     async getSupplierDataSource() {
+    async getMaterialTypeDataSourceWithoutSupplier(categoryId = null, supplierCode = null) {
+        const url = this.appMain.endpoints.lookups.materialTypesWithoutSupplier(categoryId, supplierCode);
+        return await this._fetchWithCache(url, 'materialTypesWithoutSupplier');
+    }
+
+    async getSupplierDataSource() {
         return await this._fetchWithCache(
             this.appMain.endpoints.lookups.supplierPurchasers, 
             'suppliers'
@@ -76,7 +82,8 @@ class AppFormComponents{
 
     async getItemsDataSource(filters = {}) {
         const params = new URLSearchParams(filters).toString();
-        return await this._fetchWithCache(`items?${params}`, 'items');
+        const url = this.appMain.endpoints.lookups.dataItems(params);
+        return await this._fetchWithCache(url, 'items');
     }
 
     setCacheEnabled(configKey, enabled) {

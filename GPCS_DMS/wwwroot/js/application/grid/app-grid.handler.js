@@ -1,8 +1,11 @@
-class GridDeleteHandler {
-    constructor(appMain) {
+class GridHandler {
+    constructor(appMain, onDeleteSuccess = null, onInputSuccess = null) {
         this.appMain = appMain;
         this._isDeleting = false;
         this._isDeletingSelected = false;
+
+        this.onDeleteSuccess = onDeleteSuccess || null;
+        this.onInputSuccess = onInputSuccess || null;
     }
 
     async handleSingleDelete(e) {
@@ -31,10 +34,10 @@ class GridDeleteHandler {
     async handleBulkDelete() {
         if (this._isDeletingSelected) return;
 
-        const gridInstance = window.appGridInstance?.gridInstance;
-        if (!gridInstance) return;
+        const grid = window.appGridInstance?.gridInstance;
+        if (!grid) return;
 
-        const selectedRows = gridInstance.getSelectedRowsData();
+        const selectedRows = grid.getSelectedRowsData();
 
         if (selectedRows.length === 0) {
             this.appMain.notification.warning('Please select at least one item to delete');
@@ -52,22 +55,45 @@ class GridDeleteHandler {
 
             if (!confirmed) return;
 
-            const currentData = gridInstance.option('dataSource') || [];
-            const selectedIds = selectedRows.map(row => row.id);
-            const newData = currentData.filter(item => !selectedIds.includes(item.id));
+            const dataSource = grid.option('dataSource') || [];
 
-            gridInstance.option('dataSource', newData);
-            gridInstance.clearSelection();
+            const newData = dataSource.filter(item =>
+                !selectedRows.some(selected =>
+                    item.id ? item.id === selected.id :
+                        JSON.stringify(item) === JSON.stringify(selected)
+                )
+            );
+
+            grid.option('dataSource', newData);
+            grid.clearSelection();
+
+            if(this.onDeleteSuccess){
+                this.onDeleteSuccess();
+            }
 
             this.appMain.notification.success(`Successfully deleted ${selectedRows.length} item(s)`);
 
         } catch (error) {
-            console.error('Error deleting selected items:', error);
+            console.error('Error:', error);
             this.appMain.notification.error('Failed to delete selected items');
         } finally {
-            setTimeout(() => {
-                this._isDeletingSelected = false;
-            }, 100);
+            setTimeout(() => this._isDeletingSelected = false, 100);
+        }
+    }
+
+    handleInputSelected() {
+        const grid = window.appGridInstance?.gridInstance;
+        if (!grid) return;
+
+        const selectedRows = grid.getSelectedRowsData();
+
+        if (selectedRows.length === 0) {
+            this.appMain.notification.warning('Please select at least one item to input');
+            return;
+        }
+
+        if(this.onInputSuccess){
+            this.onInputSuccess();
         }
     }
 }

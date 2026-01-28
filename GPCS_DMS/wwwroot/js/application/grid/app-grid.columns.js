@@ -5,13 +5,19 @@ const columnDefinitions = {
     ID: {
         dataField: 'id',
         caption: 'ID',
-        visible: false
+        visible: false,
+        formItem:{
+            visible: false
+        }
     },
 
     ITEM_ID: {
         dataField: 'item.id',
         caption: 'Item ID',
-        visible: false
+        visible: false,
+        formItem:{
+            visible: false
+        }
     },
 
     NO: {
@@ -20,6 +26,9 @@ const columnDefinitions = {
         allowEditing: false,
         alignment: 'center',
         width: 50,
+        formItem:{
+            visible: false
+        },
         cellTemplate: (container, options) => {
             const pageIndex = options.component.pageIndex();
             const pageSize = options.component.pageSize();
@@ -35,14 +44,40 @@ const columnDefinitions = {
         dataField: 'materialRunningNumber',
         caption: 'Material Running Number',
         allowEditing: false,
-        visible: false
+        visible: false,
+        formItem:{
+            visible: false
+        }
     },
 
     MATERIAL_CODE:{
         dataField: 'materialCode',
         caption: 'Material Code',
         allowEditing: false,
-        visible: true
+        visible: true,
+        formItem:{
+            visible: false
+        }
+    },
+
+    ITEM_RUNNING_NUMBER: {
+        dataField: 'item.itemRunningNumber',
+        caption: 'Item Running Number',
+        allowEditing: false,
+        visible: false,
+        formItem:{
+            visible: false
+        }
+    },
+
+    ITEM_CODE: {
+        dataField: 'item.itemCode',
+        caption: 'Code',
+        allowEditing: false,
+        visible: false,
+        formItem:{
+            visible: false
+        }
     },
 
     // ============================================
@@ -56,6 +91,9 @@ const columnDefinitions = {
             dataSource: lookupData.categories,
             valueExpr: 'id',
             displayExpr: 'displayName'
+        },
+        formItem:{
+            visible: false
         }
     }),
 
@@ -67,18 +105,20 @@ const columnDefinitions = {
             dataSource: lookupData.materialTypes,
             displayExpr: 'displayName',
             valueExpr: 'id'
+        },
+        formItem:{
+            visible: false
         }
     }),
 
     GROUP_OF_GOODS: (lookupData) => ({
         dataField: 'item.groupOfGoods',
         caption: 'Group of Goods',
-        allowEditing: false,
         lookup: {
             dataSource: lookupData.groupOfGoods,
             displayExpr: 'displayName',
             valueExpr: 'id'
-        }
+        },
     }),
 
     // ============================================
@@ -101,13 +141,16 @@ const columnDefinitions = {
     MATERIAL_DESCRIPTION: {
         dataField: 'materialDescription',
         caption: 'Material Description',
-        visible: false
+        visible: false,
+        formItem:{
+            visible: false
+        }
     },
 
     ITEM_DESCRIPTION: {
         dataField: 'item.itemDescription',
-        caption: 'Item Description',
-        visible: false
+        caption: 'Description',
+        visible: false,
     },
 
     UNIT: {
@@ -127,12 +170,15 @@ const columnDefinitions = {
     MATERIAL_UNIT: {
         dataField: 'materialUnit',
         caption: 'Material Unit',
-        visible: false
+        visible: false,
+        formItem:{
+            visible: false
+        }
     },
 
     ITEM_UNIT: {
         dataField: 'item.itemUnit',
-        caption: 'Item Unit',
+        caption: 'Unit',
         visible: false
     },
 
@@ -160,12 +206,15 @@ const columnDefinitions = {
     MATERIAL_UNIT_PRICE: {
         dataField: 'materialUnitPrice',
         caption: 'Material Unit Price',
-        visible: false
+        visible: false,
+        formItem:{
+            visible: false
+        }
     },
 
     ITEM_UNIT_PRICE: {
         dataField: 'item.itemUnitPrice',
-        caption: 'Item Unit Price',
+        caption: 'Unit Price',
         visible: false
     },
 
@@ -175,44 +224,45 @@ const columnDefinitions = {
     MINIMUM_ORDER: {
         dataField: 'minimumOrder',
         caption: 'Safety stock',
-        allowEditing: false
+        allowEditing: false,
+        formItem:{
+            visible: false
+        }
     },
 
     COST_CENTER: {
         dataField: 'costCenter',
         caption: 'Cost Center',
-        allowEditing: false
+        allowEditing: false,
+        formItem:{
+            visible: false
+        }
     },
 
     CONVERSION_RATE: {
         dataField: 'item.conversionRate',
         caption: 'Conversion Rate',
-        allowEditing: false
     },
 
     MOQ: {
         dataField: 'item.moq',
         caption: 'MOQ',
-        allowEditing: false
     },
 
     LOT_SIZE: {
         dataField: 'item.lotSize',
         caption: 'Lot Size',
-        allowEditing: false
     },
 
     CURRENCY: {
         dataField: 'item.currency',
         caption: 'Currency',
-        allowEditing: false,
         visible: false
     },
 
     LEAD_TIME: {
         dataField: 'item.leadTime',
         caption: 'Lead Time',
-        allowEditing: false
     },
 
     QUOTATION_EXPIRY_DATE: (dateFormat) => ({
@@ -220,7 +270,6 @@ const columnDefinitions = {
         caption: 'Quotation Expiry Date',
         dataType: 'date',
         format: dateFormat,
-        allowEditing: false
     }),
 
     // ============================================

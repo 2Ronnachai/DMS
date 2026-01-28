@@ -1,4 +1,3 @@
-// AppGrid.js
 class AppGrid {
     constructor(appMain, applicationData) {
         this.appMain = appMain;
@@ -6,18 +5,22 @@ class AppGrid {
         this.container = document.getElementById('itemsSection');
         this.gridInstance = null;
         this.gridConfig = null;
+
+        this.initialSnapshots = new Map();
         
         window.appGridInstance = this;
     }
 
     async _loadLookupData() {
-        const [categories, materialTypes, groupOfGoods] = await Promise.all([
+        const [categories, materialTypes, groupOfGoods, units, currencies] = await Promise.all([
             this.appMain.formComponents.getCategoryDataSource(),
             this.appMain.formComponents.getMaterialTypeDataSource(),
-            this.appMain.formComponents.getGroupOfGoodsDataSource()
+            this.appMain.formComponents.getGroupOfGoodsDataSource(),
+            this.appMain.formComponents.getUnitDataSource(),
+            this.appMain.formComponents.getExchangeRatesDataSource()
         ]);
 
-        this.lookupData = { categories, materialTypes, groupOfGoods };
+        this.lookupData = { categories, materialTypes, groupOfGoods, units, currencies };
     }
 
     _initializeGrid() {
@@ -46,11 +49,12 @@ class AppGrid {
                 width: 240,
                 placeholder: 'Search...'
             },
-            headerFilter: { visible: true },
             filterRow: { visible: false },
             noDataText: 'No items added yet. Click "Add Item" to begin.',
             ...config
         };
+
+        console.log('Initializing grid with config:', baseConfig);
 
         this.gridInstance = $(this.container)
             .dxDataGrid(baseConfig)
@@ -109,6 +113,7 @@ class AppGrid {
     update(data) {
         this.data = data;
         if (this.gridInstance) {
+             this.initialSnapshots.clear();
             this.set(data?.materials || []);
         }
     }
@@ -116,6 +121,12 @@ class AppGrid {
     addItem(item) {
         if (this.gridInstance) {
             const dataSource = this.get() || [];
+
+            if (!material.item.itemHistory) {
+                const snapshot = this._createSnapshot(material.item);
+                this.initialSnapshots.set(material.item.itemCode, snapshot);
+            }
+
             dataSource.push(item);
             this.set(dataSource);
             this.refresh();
@@ -125,6 +136,14 @@ class AppGrid {
     addItems(items) {
         if (this.gridInstance) {
             const dataSource = this.get() || [];
+
+             items.forEach(material => {
+                if (!material.item.itemHistory) {
+                    const snapshot = this._createSnapshot(material.item);
+                    this.initialSnapshots.set(material.item.itemCode, snapshot);
+                }
+            });
+
             dataSource.push(...items);
             this.set(dataSource);
             this.refresh();
@@ -147,9 +166,35 @@ class AppGrid {
         if (this.gridInstance) {
             const dataSource = this.get() || [];
             const filtered = dataSource.filter(item => item.id !== itemId);
+
+            this.initialSnapshots.delete(itemId);
+
             this.set(filtered);
             this.refresh();
         }
+    }
+
+    _createSnapshot(item) {
+        return {
+            itemDescription: item.itemDescription,
+            itemUnit: item.itemUnit,
+            itemUnitPrice: item.itemUnitPrice,
+            moq: item.moq,
+            lotSize: item.lotSize,
+            leadTime: item.leadTime,
+            currency: item.currency,
+            conversionRate: item.conversionRate,
+            quotationExpiryDate: item.quotationExpiryDate,
+            groupOfGoods: item.groupOfGoods
+        };
+    }
+
+    getInitialSnapshot(itemCode) {
+        return this.initialSnapshots.get(itemCode);
+    }
+
+    getPopupContainer(){
+        return document.querySelector('.application-grid-container') || document.body;
     }
 
     set(data) {
@@ -177,6 +222,7 @@ class AppGrid {
     reset(){
         if (this.gridInstance) {
             this.set([]);
+            this.initialSnapshots.clear();
             this.refresh();
         }
     }

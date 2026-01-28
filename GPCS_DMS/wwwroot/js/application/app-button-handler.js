@@ -324,6 +324,8 @@ class AppButtonHandler {
                 return this.prepareCreateNewMaterialItem();
             case 'newitems':
                 return this.prepareCreateNewMaterialItem();
+            case 'edititems':
+                return this.prepareCreateNewMaterialItem();
             default:
                 this.notification.warning('Prepare action not defined for application type: ' + this.appMain.applicationType);
                 return;
@@ -335,6 +337,8 @@ class AppButtonHandler {
             case 'newmaterialsitems':
                 return this.prepareUpdateNewMaterialItem();
             case 'newitems':
+                return this.prepareUpdateNewMaterialItem();
+            case 'edititems':
                 return this.prepareUpdateNewMaterialItem();
             default:
                 this.notification.warning('Prepare action not defined for application type: ' + this.appMain.applicationType);
@@ -366,7 +370,7 @@ class AppButtonHandler {
         }
 
         // Add Dates and Urgent Flag
-        formData.append('effectiveDate', new Date(headerData.effectiveDate).toISOString());
+        formData.append('effectiveDate', headerData.effectiveDate);
         formData.append('isUrgent', headerData.isUrgent);
 
         // Add Remark
@@ -416,7 +420,7 @@ class AppButtonHandler {
         }
 
         // Add Dates and Urgent Flag
-        formData.append('effectiveDate', new Date(headerData.effectiveDate).toISOString());
+        formData.append('effectiveDate', headerData.effectiveDate);
         formData.append('isUrgent', headerData.isUrgent);
 
         // Add Remark
@@ -428,17 +432,23 @@ class AppButtonHandler {
         formData.append('quotationUrl', headerData.quotationUrl || '');
 
         // Add Files Attachments
+        if (headerData.existingAttachmentIds && headerData.existingAttachmentIds.length > 0) {
+            headerData.existingAttachmentIds.forEach((id) => {
+                formData.append('existingAttachmentIds', id);
+            });
+        }
+        
         if (headerData.newAttachments && headerData.newAttachments.length > 0) {
             headerData.newAttachments.forEach((file, index) => {
                 if (file instanceof File) {
-                    formData.append(`NewAttachments`, file);
+                    formData.append(`newAttachments`, file);
                 }
             });
         }
 
         if (headerData.deletedAttachmentIds && headerData.deletedAttachmentIds.length > 0) {
             headerData.deletedAttachmentIds.forEach((id) => {
-                formData.append('DeletedAttachmentIds', id);
+                formData.append('deletedAttachmentIds', id);
             });
         }
 
@@ -486,7 +496,7 @@ class AppButtonHandler {
                 formData.append(`materials[${materialIndex}].item.currency`, item.currency);
                 formData.append(`materials[${materialIndex}].item.conversionRate`, item.conversionRate || 1);
                 formData.append(`materials[${materialIndex}].item.leadTime`, item.leadTime || 1);
-                formData.append(`materials[${materialIndex}].item.quotationExpiryDate`, new Date(item.quotationExpiryDate).toISOString());
+                formData.append(`materials[${materialIndex}].item.quotationExpiryDate`, item.quotationExpiryDate);
                 formData.append(`materials[${materialIndex}].item.groupOfGoods`, item.groupOfGoods || '');
 
                 if (item.itemRunningNumber) {

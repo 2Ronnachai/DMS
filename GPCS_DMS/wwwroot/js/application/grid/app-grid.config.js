@@ -9,6 +9,7 @@ class AppGridConfig {
     _registerConfigs() {
         this.configs.set('newmaterialsitems', new NewMaterialItemsGridConfig(this.appMain, this.lookupData));
         this.configs.set('newitems', new NewItemsGridConfig(this.appMain, this.lookupData));
+        this.configs.set('edititems', new EditItemsGridConfig(this.appMain, this.lookupData));
         // Additional application types can be registered here
     }
 
@@ -19,7 +20,6 @@ class AppGridConfig {
             console.error(`Config not found for application type: ${appType}`);
             return this._getDefaultConfig();
         }
-
         return config.getConfig(mode.toLowerCase());
     }
 

@@ -5,6 +5,7 @@ class AppForm{
         this.container = document.getElementById('formSection');
 
         this.formInstance = null;
+        window.appFormInstance = this;
     }
 
     async render(){

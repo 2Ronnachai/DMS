@@ -90,6 +90,10 @@
 .quotation-action-btn:hover .dx-icon {
     color: #666 !important;
 }
+.quotation-action-label.dx-field-item {
+    align-items: center !important;
+}
+
 
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
@@ -97,6 +101,18 @@
     75% { transform: translateX(5px); }
 }
 
+/* DataGrid Cell Vertical Align Middle */
 .dx-datagrid-rowsview .dx-row > td {
     vertical-align: middle !important;
+}
+
+
+.cell-changed {
+    background-color: #fff3cd !important;
+    border-left: 3px solid #ffc107 !important;
+    font-weight: 500 !important;
+}
+
+.cell-changed:hover {
+    background-color: #ffe69c !important;
 }

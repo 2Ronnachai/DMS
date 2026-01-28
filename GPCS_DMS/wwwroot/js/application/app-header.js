@@ -184,6 +184,7 @@ class AppHeader {
                         label: {
                             text: 'Quotation URL',
                         },
+                        cssClass: 'quotation-action-label',
                         editorType: 'dxTextBox',
                         editorOptions: getEditorOptions({
                             placeholder: 'Click browse button to select quotation',
@@ -279,7 +280,7 @@ class AppHeader {
                             searchMode: 'contains',
                             searchExpr: ['name', 'code'],
                             showClearButton: true,
-                            onValueChanged: (e) => {
+                            onValueChanged: async (e) => {
                                 if (this.isUpdatingFromQuotation) {
                                     return;
                                 }
@@ -327,7 +328,7 @@ class AppHeader {
                                     this._revalidateForm();
 
                                     // Notify parent
-                                    this.appMain.onSupplierChange(selectedItem);
+                                    await this.appMain.onSupplierChange(selectedItem);
 
                                 } finally {
                                     this.isUpdatingFromSupplier = false;
@@ -668,13 +669,13 @@ class AppHeader {
         await this.quotationSelector.show(
             supplierCode || null,
             displayName || 'All Suppliers',
-            (selectedQuotation) => {
-                this._onQuotationSelected(selectedQuotation);
+            async (selectedQuotation) => {
+                await this._onQuotationSelected(selectedQuotation);
             }
         );
     }
 
-    _onQuotationSelected(quotation) {
+    async _onQuotationSelected(quotation) {
         if (!quotation || !quotation.code) {
             this.appMain.notification.error('Invalid quotation data');
             return;
@@ -693,7 +694,7 @@ class AppHeader {
                 supplierName: quotation.vendorName || ''
             });
 
-            this.appMain.onSupplierChange({
+            await this.appMain.onSupplierChange({
                 code: quotation.vendorCode,
                 name: quotation.vendorName
             });
@@ -1176,6 +1177,10 @@ class AppHeader {
 
             return {
                 ...formData,
+                // Existing AttachmentIds
+                existingAttachmentIds: (this.data.fileAttachments || [])
+                    .filter(file => !this.deletedFileIds.includes(file.id))
+                    .map(file => file.id),
 
                 // New Attachments
                 newAttachments: this.pendingFiles,

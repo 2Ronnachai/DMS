@@ -76,101 +76,6 @@ class NewMaterialItemsForm {
     }
 
     _renderNewMaterialAndItemsForm() {
-        // Helper: Description Validation Rules
-        const getDescriptionValidationRules = (fieldName) => {
-            return [
-                {
-                    type: 'required',
-                    message: `${fieldName} is required`
-                },
-                {
-                    type: 'stringLength',
-                    min: 3,
-                    max: 50,
-                    message: 'Description must be between 3 and 50 characters'
-                },
-                {
-                    type: 'custom',
-                    validationCallback: (e) => {
-                        if (!e.value) return true;
-
-                        if (/['"]/.test(e.value)) {
-                            e.rule.message = 'Single quotes (\') and double quotes (") are not allowed';
-                            return false;
-                        }
-
-                        if (!/^[a-zA-Z0-9!%&()*\-./#:=@_ ]+$/.test(e.value)) {
-                            e.rule.message = 'Only letters, numbers and special characters (!%&()*-./#:=@_) are allowed';
-                            return false;
-                        }
-
-                        return true;
-                    }
-                }
-            ];
-        };
-
-        // Helper: Number Validation Rules
-        const getNumberValidationRules = (fieldName, isRequired = true, minValue = null, maxValue = null) => {
-            const rules = [];
-
-            if (isRequired) {
-                rules.push({
-                    type: 'required',
-                    message: `${fieldName} is required`
-                });
-            }
-
-            if (minValue !== null && maxValue !== null) {
-                rules.push({
-                    type: 'numeric',
-                    message: `${fieldName} must be a valid number`
-                });
-                rules.push({
-                    type: 'range',
-                    min: minValue,
-                    max: maxValue,
-                    message: `${fieldName} must be between ${minValue} and ${maxValue}`
-                });
-            } else if (minValue !== null) {
-                rules.push({
-                    type: 'numeric',
-                    message: `${fieldName} must be a valid number`
-                });
-                rules.push({
-                    type: 'range',
-                    min: minValue,
-                    message: `${fieldName} must be at least ${minValue}`
-                });
-            } else if (maxValue !== null) {
-                rules.push({
-                    type: 'numeric',
-                    message: `${fieldName} must be a valid number`
-                });
-                rules.push({
-                    type: 'range',
-                    max: maxValue,
-                    message: `${fieldName} must be at most ${maxValue}`
-                });
-            }
-            return rules;
-        };
-
-        // Helper: Currency Format
-        const getCurrencyFormat = (currency = 'THB', precision = 4) => {
-            return {
-                type: 'fixedPoint',
-                precision: precision,
-                formatter: (value) => {
-                    if (value === null || value === undefined) return '';
-                    return `${value.toLocaleString('en-US', {
-                        minimumFractionDigits: precision,
-                        maximumFractionDigits: precision
-                    })} ${currency}`;
-                }
-            };
-        };
-
         let calculateTimeout = null;
 
         // Helper: Calculated THB Unit Price
@@ -188,7 +93,7 @@ class NewMaterialItemsForm {
 
         const formConfig = {
             formData: {
-                minimunOrder: 1,
+                minimumOrder: 1,
                 conversionRate: 1,
                 itemUnitPrice: 0,
                 moq: 1,
@@ -291,7 +196,7 @@ class NewMaterialItemsForm {
                                     this.update('itemDescription', newValue);
                                 }
                             },
-                            validationRules: getDescriptionValidationRules('Material Description')
+                            validationRules: AppValidation.getDescriptionValidationRules('Material Description')
                         },
                         {
                             dataField: 'materialUnit',
@@ -338,11 +243,11 @@ class NewMaterialItemsForm {
                             editorOptions: {
                                 readOnly: true,
                                 stylingMode: 'outlined',
-                                format: getCurrencyFormat('THB', 4)
+                                format: AppValidation.getCurrencyFormat('THB', 4)
                             }
                         },
                         {
-                            dataField: 'minimunOrder',
+                            dataField: 'minimumOrder',
                             label: () => {
                                 return {
                                     text: 'Minimum Order Quantity',
@@ -356,7 +261,7 @@ class NewMaterialItemsForm {
                                 stylingMode: 'filled',
                                 showClearButton: true
                             },
-                            validationRules: getNumberValidationRules('Minimum Order Quantity', true, 1)
+                            validationRules: AppValidation.getNumberValidationRules('Minimum Order Quantity', true, 1)
                         },
                         {
                             dataField: 'costCenter',
@@ -386,7 +291,7 @@ class NewMaterialItemsForm {
                                 stylingMode: 'filled',
                                 showClearButton: true
                             },
-                            validationRules: getDescriptionValidationRules('Item Description')
+                            validationRules: AppValidation.getDescriptionValidationRules('Item Description')
                         },
                         {
                             dataField: 'itemUnit',
@@ -424,7 +329,7 @@ class NewMaterialItemsForm {
                                 stylingMode: 'filled',
                                 showClearButton: true
                             },
-                            validationRules: getNumberValidationRules('Conversion Rate', true, 1)
+                            validationRules: AppValidation.getNumberValidationRules('Conversion Rate', true, 1)
                         },
                         {
                             dataField: 'moq',
@@ -437,7 +342,7 @@ class NewMaterialItemsForm {
                                 stylingMode: 'filled',
                                 showClearButton: true
                             },
-                            validationRules: getNumberValidationRules('MOQ', true, 1)
+                            validationRules: AppValidation.getNumberValidationRules('MOQ', true, 1)
                         },
                         {
                             dataField: 'lotSize',
@@ -450,7 +355,7 @@ class NewMaterialItemsForm {
                                 stylingMode: 'filled',
                                 showClearButton: true
                             },
-                            validationRules: getNumberValidationRules('Lot Size', true, 1)
+                            validationRules: AppValidation.getNumberValidationRules('Lot Size', true, 1)
                         },
                         {
                             dataField: 'itemUnitPrice',
@@ -462,7 +367,7 @@ class NewMaterialItemsForm {
                                 placeholder: 'Enter Unit Price',
                                 stylingMode: 'filled',
                                 showClearButton: true,
-                                format: getCurrencyFormat('THB', 4),
+                                format: AppValidation.getCurrencyFormat('THB', 4),
                                 onValueChanged: (e) => {
                                     if (calculateTimeout) {
                                         clearTimeout(calculateTimeout);
@@ -476,7 +381,7 @@ class NewMaterialItemsForm {
                                     }, 300);
                                 }
                             },
-                            validationRules: getNumberValidationRules('Unit Price', true, 0.0001)
+                            validationRules: AppValidation.getNumberValidationRules('Unit Price', true, 0.0001)
                         },
                         {
                             dataField: 'currency',
@@ -499,7 +404,7 @@ class NewMaterialItemsForm {
                                     if (e.value) {
                                         const unitPriceEditor = this.formInstance.getEditor('itemUnitPrice');
                                         if (unitPriceEditor) {
-                                            unitPriceEditor.option('format', getCurrencyFormat(e.value, 4));
+                                            unitPriceEditor.option('format', AppValidation.getCurrencyFormat(e.value, 4));
                                         }
 
                                         calculateTHBUnitPrice();
@@ -570,7 +475,7 @@ class NewMaterialItemsForm {
                                     e.customItem = (!isNaN(num) && num >= 1) ? num : null;
                                 }
                             },
-                            validationRules: getNumberValidationRules('Lead Time', true, 1)
+                            validationRules: AppValidation.getNumberValidationRules('Lead Time', true, 1)
                         },
                         {
                             dataField: 'groupOfGoods',
@@ -650,7 +555,7 @@ class NewMaterialItemsForm {
             materialDescription: formData.materialDescription,
             materialUnit: formData.materialUnit,
             materialUnitPrice: formData.materialUnitPrice,
-            minimunOrder: formData.minimunOrder,
+            minimumOrder: formData.minimumOrder,
             costCenter: formData.costCenter,
             runningNumber: 0, // Default running number
             item: {

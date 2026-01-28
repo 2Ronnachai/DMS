@@ -3,10 +3,11 @@ class GridToolbarBuilder{
         this.appMain = appMain;
     }
 
-    getEditableToolbar() {
+    getEditableToolbar(onDeleteSuccess = null, onInputSuccess = null) {
         return {
             items: [
-                this._getDeleteSelectedButton(),
+                this._getDeleteSelectedButton(onDeleteSuccess),
+                ...(this.appMain.applicationType.toLowerCase() === 'edititems' ? [this._getInputSelected(onInputSuccess)] : []),
                 this._getRefreshButton(),
                 this._getExportButton(),
                 'searchPanel'
@@ -24,7 +25,7 @@ class GridToolbarBuilder{
         };
     }
 
-    _getDeleteSelectedButton() {
+    _getDeleteSelectedButton(onDeleteSuccess = null) {
         return {
             location: 'before',
             template: () => {
@@ -36,8 +37,11 @@ class GridToolbarBuilder{
                         e.stopPropagation();
                         $(e.currentTarget).blur();
                         
-                        const deleteHandler = new GridDeleteHandler(this.appMain);
-                        deleteHandler.handleBulkDelete();
+                        const handler = new GridHandler(
+                            this.appMain, 
+                            onDeleteSuccess
+                        );
+                        handler.handleBulkDelete();
                     });
             }
         };
@@ -74,6 +78,25 @@ class GridToolbarBuilder{
                         
                         // const exportHandler = new ExportHandler(this.appMain);
                         // exportHandler.exportToExcel();
+                    });
+            }
+        };
+    }
+
+    _getInputSelected(onInputSuccess = null) {
+        return {
+            location: 'before',
+            template: () => {
+                return $('<button/>')
+                    .addClass('dialog-btn dialog-info dialog-btn-ok')
+                    .html('<i class="fas fa-plus"></i> Input Selected')
+                    .on('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        $(e.currentTarget).blur();
+                        
+                        const handler = new GridHandler(this.appMain, null, onInputSuccess);
+                        handler.handleInputSelected();
                     });
             }
         };

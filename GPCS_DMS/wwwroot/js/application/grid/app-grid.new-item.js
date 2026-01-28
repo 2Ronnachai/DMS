@@ -2,7 +2,7 @@ class NewItemsGridConfig{
     constructor(appMain, lookupData){
         this.appMain = appMain;
         this.lookupData = lookupData;
-        this.deleteHandler = new GridDeleteHandler(appMain);
+        this.handler = new GridHandler(appMain);
         this.toolbarBuilder = new GridToolbarBuilder(appMain);
     }
 
@@ -34,7 +34,7 @@ class NewItemsGridConfig{
 
         if (editable){
             columns.push(
-                columnDefinitions.DELETE_BUTTON((e) => this.deleteHandler.handleSingleDelete(e))
+                columnDefinitions.DELETE_BUTTON((e) => this.handler.handleSingleDelete(e))
             );
         }
         return columns;

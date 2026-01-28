@@ -36,12 +36,17 @@ class AppMain {
             lookups: {
                 units: 'units/lookups/',
                 suppliers: 'suppliers/lookups/',
-                categories: 'categories/lookups-purchaser/',
+                category: {
+                    purchaser: 'categories/lookups-purchaser/',
+                    supplier: (supplierCode) => `categories/lookups-supplier?supplierCode=${supplierCode}`
+                },
                 exchangeRates: 'exchangerates/lookups/',
                 groupOfGoods: 'groupofgoods/lookups/',
                 materialTypes: (categoryId) => categoryId ? `materialtypes/lookups?categoryId=${categoryId}` : 'materialtypes/lookups/',
+                materialTypesWithoutSupplier: (categoryId, supplierCode) => `materialtypes/lookups-without-supplier?categoryId=${categoryId}&supplierCode=${supplierCode}`,
                 supplierPurchasers: 'supplierPurchasers/supplier-purchaser/',
                 materials: (categoryId, materialTypeId) => `dataMaterials/filter/with-category-and-type?categoryId=${categoryId}&materialTypeId=${materialTypeId}`,
+                dataItems: (filter) => `dataItems/filter?${filter}`
             },
             applications: {
                 save: (id) => id ? `applications/${id}/save/` : 'applications/save/',
@@ -246,20 +251,18 @@ class AppMain {
         // Handle submission logic for New Materials & Items
         // Add to datagrid in items section
         this.grid.addItems([data]);
-        console.log('Submitted New Materials & Items:', data);
     }
 
     onSubmitNewItems(data) {
         // Handle submission logic for New Item
         // Add to datagrid in items section
         this.grid.addItems([data]);
-        console.log('Submitted New Item:', data);
     }
 
-    onSubmitEditItem(data) {
+    onSubmitEditItems(data) {
         // Handle submission logic for Edit Item
         // Update datagrid in items section
-        console.log('Submitted Edit Item:', data);
+        this.grid.addItems(data);
     }
 
     onSubmitDeleteItem(data) {
