@@ -119,6 +119,7 @@ class EditItemForm {
                                     materialTypeEditor.option('disabled', true);
                                     materialTypeEditor.option('value', null);
                                 }
+                                this.updateGridData([]);
                             }
                         }
                     },
@@ -141,6 +142,8 @@ class EditItemForm {
                         onValueChanged: async (e) => {
                             if (e.value && this.formInstance.option('formData').categoryId) {
                                 await this._loadItems();
+                            }else{
+                                this.updateGridData([]);
                             }
                         }
                     },
@@ -317,7 +320,7 @@ class EditItemForm {
             filterPanel: { visible: true },
             noDataText: 'No items to display. Please select Category and Material Type.',
             columns: [
-                { dataField: 'code', caption: 'Item Code', },
+                { dataField: 'code', caption: 'Item Code', fixed: true, fixedPosition: 'left' },
                 {
                     dataField: null, caption: 'Details',
                     columns: [
@@ -351,8 +354,8 @@ class EditItemForm {
                 },
                 { dataField: 'runningNumber', caption: 'Running Number', visible: false },
                 { dataField: 'dataMaterial.code', caption: 'Material Code', visible: false },
-                { dataFiled: 'dataMaterial.categoryId', caption: 'Material Category Id', visible: false },
-                { dataFiled: 'dataMaterial.materialTypeId', caption: 'Material Material Type Id', visible: false },
+                { dataField: 'dataMaterial.categoryId', caption: 'Material Category Id', visible: false },
+                { dataField: 'dataMaterial.materialTypeId', caption: 'Material Material Type Id', visible: false },
                 { dataField: 'dataMaterial.description', caption: 'Material Description', visible: false },
                 { dataField: 'dataMaterial.unit', caption: 'Material Unit', visible: false },
                 { dataField: 'dataMaterial.costCenter', caption: 'Cost Center', visible: false },

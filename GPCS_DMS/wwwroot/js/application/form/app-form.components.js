@@ -12,7 +12,8 @@ class AppFormComponents{
             exchangeRates: { enabled: true, ttl: 5 * 60 * 1000 }, 
             groupOfGoods: { enabled: true, ttl: 10 * 60 * 1000 },
             materials: { enabled: true, ttl: 10 * 60 * 1000 },
-            items: { enabled: false, ttl: 0 }  
+            items: { enabled: false, ttl: 0 },
+            items_details: { enabled: true , ttl: 3 * 60 * 1000} // Short TTL due to frequent changes 3 minutes 
         };
     }
 
@@ -84,6 +85,12 @@ class AppFormComponents{
         const params = new URLSearchParams(filters).toString();
         const url = this.appMain.endpoints.lookups.dataItems(params);
         return await this._fetchWithCache(url, 'items');
+    }
+
+    async getItemsDataSourceWithGPCSDetails(filters = {}) {
+        const params = new URLSearchParams(filters).toString();
+        const url = this.appMain.endpoints.lookups.dataItemsWithGPCSDetails(params);
+        return await this._fetchWithCache(url, 'items_details');
     }
 
     setCacheEnabled(configKey, enabled) {

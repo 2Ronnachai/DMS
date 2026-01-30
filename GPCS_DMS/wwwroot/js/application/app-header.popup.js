@@ -226,17 +226,44 @@ class AppHeaderPopup {
                 minWidth: 200
             },
             {
+                dataField: 'validFrom',
+                caption: 'Effective Date',
+                dataType: 'date',
+                format: 'dd/MM/yyyy',
+            },
+            {
+                dataField: 'validUntil',
+                caption: 'Expiry Date',
+                dataType: 'date',
+                format: 'dd/MM/yyyy',
+            },
+            {
+                dataField: null,
+                caption: 'Duration (Days)',
+                width: 130,
+                calculateCellValue: (data) => {
+                    if (data.validFrom && data.validUntil) {
+                        const fromDate = new Date(data.validFrom);
+                        const untilDate = new Date(data.validUntil);
+                        const diffTime = Math.abs(untilDate - fromDate);
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                        return diffDays + ' Days';
+                    }
+                    return '';
+                }
+            },
+            {
+                dataField: 'requesterName',
+                caption: 'Requester',
+                width: 150
+            },
+            {
                 dataField: 'requestDate',
                 caption: 'Request Date',
                 dataType: 'datetime',
                 width: 150,
                 format: 'dd/MM/yyyy HH:mm',
                 sortOrder: 'desc'
-            },
-            {
-                dataField: 'requesterName',
-                caption: 'Requester',
-                width: 150
             },
             {
                 fixed: true,
@@ -268,6 +295,7 @@ class AppHeaderPopup {
     }
 
     async _loadQuotations() {
+        const loadingId = this.appMain.loading.show('Loading quotations...');
         try {
             const apiUrl = this.supplierCode 
                 ? `${window.APP_CONFIG.qcsUrl.service}Integration/GetRequestByVendorCode?vendorCode=${encodeURIComponent(this.supplierCode)}`
@@ -318,6 +346,8 @@ class AppHeaderPopup {
                 }
             });
             this._updateTotalCount(); 
+        }finally {
+            this.appMain.loading.hide(loadingId);
         }
     }
 

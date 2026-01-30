@@ -10,7 +10,7 @@ class AppGridConfig {
         this.configs.set('newmaterialsitems', new NewMaterialItemsGridConfig(this.appMain, this.lookupData));
         this.configs.set('newitems', new NewItemsGridConfig(this.appMain, this.lookupData));
         this.configs.set('edititems', new EditItemsGridConfig(this.appMain, this.lookupData));
-        // Additional application types can be registered here
+        this.configs.set('deleteitems', new DeleteItemsGridConfig(this.appMain, this.lookupData));
     }
 
     getConfig(appType, mode) {

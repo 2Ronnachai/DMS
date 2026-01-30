@@ -236,16 +236,19 @@ class AppHeader {
                                     visible: this.mode !== 'view',
                                     onClick: async () => await this._openQuotationSelector()
                                 }
-                            }
-                            ]
+                            }],
                         }),
                         validationRules: [{
                             type: 'custom',
                             reevaluate: true,
                             validationCallback: (options) => {
                                 const hasSupplier = this.formInstance?.getEditor('supplierCode')?.option('value');
-
                                 if (!hasSupplier) {
+                                    return true;
+                                }
+
+                                const applicationType = this.appMain.applicationType?.toLowerCase();
+                                if (applicationType === 'deleteitems') {
                                     return true;
                                 }
 
@@ -254,9 +257,14 @@ class AppHeader {
 
                                 return hasQuotation || hasAttachment;
                             },
-                            message: 'Please provide quotation URL or attach files'
+                            message: () => {
+                                const applicationType = this.appMain?.applicationType?.toLowerCase();
+                                if (applicationType === 'deleteitems') {
+                                    return ''; // No error for DeleteItems type
+                                }
+                                return 'Please provide quotation URL or attach files';
+                            }
                         }],
-
                         colSpan: 2
                     },
                     // Supplier
@@ -282,6 +290,7 @@ class AppHeader {
                             showClearButton: true,
                             onValueChanged: async (e) => {
                                 if (this.isUpdatingFromQuotation) {
+                                    await this.appMain.onSupplierChange(null);
                                     return;
                                 }
 
@@ -781,12 +790,12 @@ class AppHeader {
             supplierEditor.option('stylingMode', 'filled');
         }
         if (effectiveDateEditor) {
-            effectiveDateEditor.option('value', null);
+            effectiveDateEditor.option('value', new Date());
             effectiveDateEditor.option('readOnly', false);
             effectiveDateEditor.option('stylingMode', 'filled');
         }
 
-        this.formInstance.updateData('supplierName', '');
+        this.formInstance.updateData('supplierName', null);
 
         this.isUpdatingFromQuotation = false;
     }
@@ -988,17 +997,21 @@ class AppHeader {
             );
         }
 
-        // 2. Validate Quotation OR Attachment
+        // 2. DeleteItems type does not require quotation or attachment
+        const isDeleteItems = this.appMain.applicationType.toLowerCase() === 'deleteitems';
+        if (isDeleteItems) {
+            return this._createValidationResult(true);
+        }
+
+        // 3. Validate Quotation OR Attachment
         const quotationUrl = this._getQuotationUrl();
         const allFiles = this._getAllFiles();
-        if (this.appMain.applicationType.toLowerCase() !== 'deleteitems') {
-            if (quotationUrl || allFiles.length > 0) {
-                return this._createValidationResult(true);
-            }
-
-            // 3. Show errors
-            this._showQuotationAndAttachmentErrors();
+        if (quotationUrl || allFiles.length > 0) {
+            return this._createValidationResult(true);
         }
+
+        // 4. Show errors
+        this._showQuotationAndAttachmentErrors();
 
         return this._createValidationResult(
             false,
@@ -1161,12 +1174,16 @@ class AppHeader {
         setTimeout(() => {
             const quotationEditor = this.formInstance.getEditor('quotationUrl');
             const supplierEditor = this.formInstance.getEditor('supplierCode');
+            const effectiveDateEditor = this.formInstance.getEditor('effectiveDate');
 
             if (quotationEditor) {
                 quotationEditor.option('isValid', true);
             }
             if (supplierEditor) {
                 supplierEditor.option('isValid', true);
+            }
+            if (effectiveDateEditor) {
+                effectiveDateEditor.option('isValid', true);
             }
         }, 50);
     }

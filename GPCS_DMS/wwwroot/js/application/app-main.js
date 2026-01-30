@@ -46,7 +46,8 @@ class AppMain {
                 materialTypesWithoutSupplier: (categoryId, supplierCode) => `materialtypes/lookups-without-supplier?categoryId=${categoryId}&supplierCode=${supplierCode}`,
                 supplierPurchasers: 'supplierPurchasers/supplier-purchaser/',
                 materials: (categoryId, materialTypeId) => `dataMaterials/filter/with-category-and-type?categoryId=${categoryId}&materialTypeId=${materialTypeId}`,
-                dataItems: (filter) => `dataItems/filter?${filter}`
+                dataItems: (filter) => `dataItems/filter?${filter}`,
+                dataItemsWithGPCSDetails: (params) => `dataItems/filter/with-gpcs-details?${params}`,
             },
             applications: {
                 save: (id) => id ? `applications/${id}/save/` : 'applications/save/',
@@ -232,10 +233,9 @@ class AppMain {
 
     async onSupplierChange(supplier) {
         console.log('Supplier changed to:', supplier);
-
         // Handle supplier change logic here
         if (this.form && typeof this.form.onSupplierChange === 'function' &&
-            this.applicationType.toLowerCase() === 'edititems'
+            ( this.applicationType.toLowerCase() === 'edititems' || this.applicationType.toLowerCase() === 'deleteitems' )
         ) {
             this.grid.reset();
             await this.form.onSupplierChange(supplier);

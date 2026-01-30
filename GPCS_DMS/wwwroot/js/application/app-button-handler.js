@@ -188,7 +188,7 @@ class AppButtonHandler {
         } catch (error) {
             console.error('Submit error:', error);
             this.notification.error('Failed to submit application: ' + error.message);
-        }finally{
+        } finally {
             this.loading.hide(loadingId);
         }
     }
@@ -205,7 +205,7 @@ class AppButtonHandler {
 
         if (comment === null) return; // User cancelled
         const loadingId = this.loading.show('Approving application...');
-        try{
+        try {
             const response = await this.http.put(
                 this.appMain.endpoints.applications.approve(this.appMain.applicationId) + (comment ? `?comment=${encodeURIComponent(comment)}` : '')
             );
@@ -227,10 +227,10 @@ class AppButtonHandler {
 
             this.notification.success(`Application no. ${this.appMain.applicationData.applicationNumber} approved successfully.`);
             this.nevigateToHomePage();
-        }catch(error){
+        } catch (error) {
             console.error('Approve error:', error);
             this.notification.error('Failed to approve application: ' + error.message);
-        }finally{
+        } finally {
             this.loading.hide(loadingId);
         }
     }
@@ -254,7 +254,7 @@ class AppButtonHandler {
         if (comment === null) return; // User cancelled
 
         const loadingId = this.loading.show('Returning application...');
-        try{
+        try {
             const response = await this.http.put(
                 this.appMain.endpoints.applications.return(this.appMain.applicationId) + `?comment=${encodeURIComponent(comment)}`
             );
@@ -278,10 +278,10 @@ class AppButtonHandler {
             this.notification.success(`Application no. ${this.appMain.applicationData.applicationNumber} returned successfully.`);
             this.nevigateToHomePage();
 
-        }catch(error){
+        } catch (error) {
             console.error('Return error:', error);
             this.notification.error('Failed to return application: ' + error.message);
-        }finally{
+        } finally {
             this.loading.hide(loadingId);
         }
 
@@ -326,6 +326,8 @@ class AppButtonHandler {
                 return this.prepareCreateNewMaterialItem();
             case 'edititems':
                 return this.prepareCreateNewMaterialItem();
+            case 'deleteitems':
+                return this.prepareCreateNewMaterialItem();
             default:
                 this.notification.warning('Prepare action not defined for application type: ' + this.appMain.applicationType);
                 return;
@@ -339,6 +341,8 @@ class AppButtonHandler {
             case 'newitems':
                 return this.prepareUpdateNewMaterialItem();
             case 'edititems':
+                return this.prepareUpdateNewMaterialItem();
+            case 'deleteitems':
                 return this.prepareUpdateNewMaterialItem();
             default:
                 this.notification.warning('Prepare action not defined for application type: ' + this.appMain.applicationType);
@@ -370,7 +374,10 @@ class AppButtonHandler {
         }
 
         // Add Dates and Urgent Flag
-        formData.append('effectiveDate', headerData.effectiveDate);
+        const effectiveDate = this._formatDateTime(headerData.effectiveDate);
+        if (effectiveDate !== null) {
+            formData.append('effectiveDate', effectiveDate);
+        }
         formData.append('isUrgent', headerData.isUrgent);
 
         // Add Remark
@@ -420,7 +427,11 @@ class AppButtonHandler {
         }
 
         // Add Dates and Urgent Flag
-        formData.append('effectiveDate', headerData.effectiveDate);
+        const effectiveDate = this._formatDateTime(headerData.effectiveDate);
+        if (effectiveDate !== null) {
+            formData.append('effectiveDate', effectiveDate);
+        }
+
         formData.append('isUrgent', headerData.isUrgent);
 
         // Add Remark
@@ -437,7 +448,7 @@ class AppButtonHandler {
                 formData.append('existingAttachmentIds', id);
             });
         }
-        
+
         if (headerData.newAttachments && headerData.newAttachments.length > 0) {
             headerData.newAttachments.forEach((file, index) => {
                 if (file instanceof File) {
@@ -496,7 +507,12 @@ class AppButtonHandler {
                 formData.append(`materials[${materialIndex}].item.currency`, item.currency);
                 formData.append(`materials[${materialIndex}].item.conversionRate`, item.conversionRate || 1);
                 formData.append(`materials[${materialIndex}].item.leadTime`, item.leadTime || 1);
-                formData.append(`materials[${materialIndex}].item.quotationExpiryDate`, item.quotationExpiryDate);
+
+                const quotationExpiryDate = this._formatDateTime(item.quotationExpiryDate);
+                if (quotationExpiryDate !== null) {
+                    formData.append(`materials[${materialIndex}].item.quotationExpiryDate`, quotationExpiryDate);
+                }
+
                 formData.append(`materials[${materialIndex}].item.groupOfGoods`, item.groupOfGoods || '');
 
                 if (item.itemRunningNumber) {
@@ -517,4 +533,42 @@ class AppButtonHandler {
             console.log(`${pair[0]}: ${pair[1]}`);
         }
     }
+
+    _formatDateTime(dateValue) {
+        if (!dateValue || dateValue === '') return null;
+
+        const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
+
+        if (isNaN(date.getTime())) {
+            return null;
+        }
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+        // "2026-01-27T06:12:04"
+    }
+
+    _formatDate(dateValue) {
+        if (!dateValue || dateValue === '') return null;
+
+        const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
+
+        if (isNaN(date.getTime())) {
+            return null;
+        }
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        return `${year}-${month}-${day}`;
+        // "2026-01-27"
+    }
+
 }
