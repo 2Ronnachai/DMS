@@ -1,0 +1,203 @@
+@{
+    ViewData["Title"] = "GPCS Material";
+}
+
+@section Styles {
+    <style>
+        /* Japanese Minimalist Grid Styles */
+        .jp-minimal-header {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e8e8e8;
+        }
+
+            .jp-minimal-header h2 {
+                font-size: 1.5rem;
+                font-weight: 500;
+                color: #2c2c2c;
+                letter-spacing: 0.5px;
+                margin-bottom: 0.5rem;
+            }
+
+            .jp-minimal-header p {
+                font-size: 0.9rem;
+                color: #666666;
+                margin: 0;
+            }
+
+        .jp-minimal-card {
+            background-color: #ffffff;
+            border: 0px;
+            border-radius: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+            .jp-minimal-card .card-body {
+                padding: 12px;
+            }
+
+        #gridMaterial {
+            height: calc(100vh - 250px) !important;
+            min-height: 500px;
+        }
+
+        .dx-datagrid-filter-panel .dx-datagrid-filter-panel-text,
+        .dx-datagrid-filter-panel .dx-icon-filter{
+            color: #1890ff !important;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="jp-minimal-header">
+        <h2>GPCS Material Management</h2>
+        <p>Manage your GPCS materials efficiently using the grid below.</p>
+    </div>
+    <div id="gridMaterial"></div>
+    @* <div class="card jp-minimal-card mb-4">
+        <div class="card-body">
+            
+        </div>
+    </div> *@
+</div>
+
+@section Scripts {
+    <script src="~/js/grids/grid-state.js"></script>
+    <script src="~/js/grids/grid-export.js"></script>
+    <script src="~/js/grids/grid-toolbar.js"></script>
+    <script src="~/js/grids/grid-custom-store.js"></script>
+    <script src="~/js/grids/base-grid.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            const materialStore = GridCustomStore.create({
+                apiUrl: '@Url.Action("GetMaterials", "Data")',
+                key: 'materialId',
+                insertUrl: '@Url.Action("InsertMaterial", "Data")',
+                updateUrl: '@Url.Action("UpdateMaterial", "Data")/{id}',
+                deleteUrl: '@Url.Action("DeleteMaterial", "Data")/{id}',
+                
+                onBeforeLoad: (loadOptions) => {
+                    console.log('Loading materials...', loadOptions);
+                },
+                
+                onAfterLoad: (response) => {
+                    console.log('Materials loaded:', response);
+                },
+                
+                onError: (error) => {
+                    console.error('Error:', error);
+                }
+            });
+
+            // สร้าง Grid
+            const grid = new BaseGrid({
+                gridId: 'gpcsMaterialGrid',
+                container: '#gridMaterial',
+                
+                // ใช้ CustomStore
+                dataSource: materialStore,
+                
+                // Columns
+                columns: [
+                    BaseGrid.createColumn('materialId', 'Material ID', { 
+                        width: 120,
+                        fixed: true,
+                        allowEditing: false
+                    }),
+                    BaseGrid.createColumn('materialCode', 'Material Code', { 
+                        width: 150,
+                        validationRules: [{ type: 'required' }]
+                    }),
+                    BaseGrid.createColumn('category', 'Category', { 
+                        width: 120,
+                        groupIndex: 0  // กำหนดให้ group ตาม category อัตโนมัติ
+                    }),
+                    BaseGrid.createColumn('materialName', 'Material Name', { 
+                        width: 300,
+                        validationRules: [{ type: 'required' }]
+                    }),
+                    BaseGrid.createColumn('description', 'Description', { 
+                        width: 400
+                    }),
+                    BaseGrid.createNumberColumn('unitPrice', 'Unit Price', '#,##0.00', {
+                        width: 130
+                    }),
+                    BaseGrid.createColumn('unit', 'Unit', { 
+                        width: 100
+                    }),
+                    BaseGrid.createDateColumn('createdDate', 'Created Date', 'dd/MM/yyyy', {
+                        width: 130,
+                        allowEditing: false
+                    }),
+                    BaseGrid.createBooleanColumn('isActive', 'Active', { 
+                        width: 100
+                    })
+                ],
+                
+                keyExpr: 'materialId',
+                
+                // Features
+                enableStateStorage: true,
+                enableExport: true,
+                enableFilterRow: true,
+                enableFilterPanel: true,
+                enableHeaderFilter: true,
+                enableSearchPanel: true,
+                enableColumnChooser: true,
+                enableGrouping: true,              // เปิด Grouping
+                enableSelection: true,
+                selectionMode: 'multiple',
+                enableRowNumber: true,             // เปิด Row Number
+                rowAlternationEnabled: false,
+                
+                // Editing
+                enableEditing: false,
+                editMode: 'popup',
+                
+                // Paging - ปิดใช้งาน
+                enablePaging: false,
+                
+                // Scrolling - ใช้ virtual mode (โหลดทีละนิดจาก API)
+                scrolling: {
+                    mode: 'virtual',
+                    rowRenderingMode: 'virtual',
+                    showScrollbar: 'always'
+                },
+                
+                // Height - เต็มพื้นที่
+                height: '100%',
+                
+                // Export
+                exportFileName: 'GPCS_Materials',
+                
+                // Remote operations (เพราะใช้ API)
+                remoteOperations: true,
+                
+                // Callbacks
+                onInitialized: (e) => {
+                    console.log('Material Grid initialized');
+                },
+                
+                onSelectionChanged: (e) => {
+                    const selectedCount = e.selectedRowsData.length;
+                    if (selectedCount > 0) {
+                        console.log(`Selected ${selectedCount} material(s)`);
+                    }
+                },
+                
+                onRowClick: (e) => {
+                    if (e.rowType === 'data') {
+                        console.log('Clicked material:', e.data);
+                    }
+                }
+            });
+
+            // Initialize
+            grid.initialize();
+
+            // เก็บ instance ไว้ใช้งาน (optional)
+            window.materialGrid = grid;
+        });
+    </script>
+}

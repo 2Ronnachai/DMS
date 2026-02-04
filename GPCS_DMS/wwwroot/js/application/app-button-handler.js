@@ -77,10 +77,15 @@ class AppButtonHandler {
 
             // Optional: redirect or update UI with new data
             if (response.data && response.data.id) {
+                // Update session (non-blocking)
+                await this._updateSession(response.data.id);
+
                 this.notification.success('Changes saved successfully.');
+
+                // Update UI
                 this.appMain.applicationId = response.data.id;
                 this.appMain.mode = 'edit';
-                await this.appMain._initializeModules();
+                await this.appMain._init();
             }
             return true;
         } catch (error) {
@@ -290,7 +295,55 @@ class AppButtonHandler {
 
     async cancel() {
         // Confirm cancel
-        this.notification.info('Cancel action triggered.');
+        const isDataChanged = this.appMain.isDataChanged();
+        let comment = '';
+        if (isDataChanged || this.appMain.applicationId != null) {
+            comment = await this.dialog.prompt({
+                title: 'Cancel Application',
+                message: 'You have unsaved changes. Are you sure you want to cancel the application?',
+                placeholder: 'Enter your comments (optional)',
+                type: 'confirm',
+                required: true
+            });
+
+            if (comment === null) return; // User chose to stay on the page
+        }
+
+        // Call API to cancel application if needed
+        const loadingId = this.loading.show('Cancelling application...');
+        try {
+            const response = await this.http.put(
+                this.appMain.endpoints.applications.cancel(this.appMain.applicationId) + (comment ? `?comment=${encodeURIComponent(comment)}` : '')
+            );
+
+            if (!response || !response.success) {
+                const errorMessage = response?.message || 'Unknown error from server.';
+                const errors = response?.errors || [];
+                // Show detailed errors if available
+                if (errors.length > 0) {
+                    this.dialog.alert({
+                        title: 'Cancel Error',
+                        message: `${errorMessage}\n\n${errors.join('\n')}`,
+                        type: 'danger'
+                    });
+                } else {
+                    this.notification.error('Failed to cancel application: ' + errorMessage);
+                }
+            }
+
+            if (response && response.success) {
+                this.notification.success(`Application no. ${this.appMain.applicationData.applicationNumber} cancelled successfully.`);
+
+                this.appMain.clearAllSessionData();
+
+                this.nevigateToHomePage();
+            }
+        } catch (error) {
+            console.error('Cancel error:', error);
+            this.notification.error('Failed to cancel application: ' + error.message);
+        } finally {
+            this.loading.hide(loadingId);
+        }
     }
 
     async back() {
@@ -310,6 +363,7 @@ class AppButtonHandler {
             }
         }
 
+        this.appMain.clearAllSessionData();
         this.nevigateToHomePage();
     }
 
@@ -527,6 +581,27 @@ class AppButtonHandler {
     }
 
     // Helpers to log FormData content for debugging
+    async _updateSession(applicationId) {
+        try {
+            const response = await this.http.post('http://localhost:5082/Application/UpdateSession', {
+                applicationType: this.appMain.applicationType,
+                applicationId: applicationId
+            });
+
+            if (!response.success) {
+                console.warn('Failed to update session:', response.message);
+                return false;
+            }
+
+            console.log('Session updated successfully');
+            return true;
+        } catch (error) {
+            console.error('Error updating session:', error);
+            // Don't throw - session update is not critical for save operation
+            return false;
+        }
+    }
+
     _logFormData(formData) {
         console.log('FormData contents:');
         for (let pair of formData.entries()) {

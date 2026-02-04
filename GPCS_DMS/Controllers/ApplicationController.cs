@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using GPCS_DMS.Models;
+using Microsoft.AspNetCore.Mvc;
 
 namespace GPCS_DMS.Controllers
 {
@@ -7,6 +8,28 @@ namespace GPCS_DMS.Controllers
         public IActionResult Index()
         {
             return View();
+        }
+
+        [HttpPost]
+        public IActionResult UpdateSession([FromBody] SessionUpdateRequest request)
+        {
+            if (string.IsNullOrEmpty(request.ApplicationType))
+            {
+                return BadRequest(new { success = false, message = "Application type is required" });
+            }
+
+            HttpContext.Session.SetString("ApplicationType", request.ApplicationType);
+            
+            if (request.ApplicationId.HasValue)
+            {
+                HttpContext.Session.SetInt32("ApplicationId", request.ApplicationId.Value);
+            }
+            else
+            {
+                HttpContext.Session.Remove("ApplicationId");
+            }
+
+            return Json(new { success = true });
         }
 
         [HttpGet]
@@ -38,16 +61,6 @@ namespace GPCS_DMS.Controllers
             ViewBag.ApplicationType = applicationType;
             ViewBag.ApplicationId = applicationId;
 
-            return View();
-        }
-
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        public IActionResult Details(int id)
-        {
             return View();
         }
     }

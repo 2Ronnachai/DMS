@@ -283,4 +283,16 @@ class AppMain {
 
         return isChanged;
     }
+
+    clearAllSessionData() {
+        sessionStorage.clear();
+
+        // Reset appMain state
+        this.applicationType = null;
+        this.applicationId = null;
+        this.mode = null;
+        this.avaiableActions = [];
+        this.permissions = null;
+        this.applicationData = null;
+    }
 }

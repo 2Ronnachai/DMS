@@ -142,7 +142,7 @@ class EditItemForm {
                         onValueChanged: async (e) => {
                             if (e.value && this.formInstance.option('formData').categoryId) {
                                 await this._loadItems();
-                            }else{
+                            } else {
                                 this.updateGridData([]);
                             }
                         }
@@ -273,7 +273,7 @@ class EditItemForm {
         try {
             const items = await this.appForm.appMain.formComponents.getItemsDataSource(payload);
 
-            const existingItems = this.appForm.appMain.grid.get() || [];
+            const existingItems = await this._waitForMainGridData();
 
             // Filter out items that are already in the main grid
             const filteredItems = (items || []).filter(item => {
@@ -290,6 +290,24 @@ class EditItemForm {
             this.appForm.appMain.loading.hide(loadingId);
         }
     }
+
+    _waitForMainGridData(timeout = 2000) {
+        return new Promise(resolve => {
+            const start = Date.now();
+            const check = () => {
+                const data = this.appForm.appMain.grid.get();
+                if (data && data.length > 0) {
+                    resolve(data);
+                } else if (Date.now() - start > timeout) {
+                    resolve(data || []);
+                } else {
+                    requestAnimationFrame(check);
+                }
+            };
+            check();
+        });
+    }
+
 
     _renderEditItemsGrid() {
         const gridConfig = {
