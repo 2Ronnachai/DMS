@@ -1,0 +1,28 @@
+@{
+    ViewData["Title"] = "GPCS IvInventory";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/grid.css" asp-append-version="true" />
+}
+
+<div class="container-fluid">
+    <div class="jp-minimal-header">
+        <h2>GPCS Inventory Management</h2>
+        <p>Manage your GPCS inventory efficiently using the grid below.</p>
+    </div>
+    <div class="grid-wrapper">
+        <div id="gridGPCSInventory"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_GridScripts" />
+    <script src="~/js/grids/configs/gpcs-inventory-grid-config.js"></script>
+    
+    <script>
+        $(document).ready(function () {
+            const grid = GridFactory.createGrid(InventoryGridConfig);
+        });
+    </script>
+}

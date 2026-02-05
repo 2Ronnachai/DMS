@@ -31,6 +31,7 @@
                 view: "@Configuration["ApiSettings:QCSUrl:View"]",
                 service: "@Configuration["ApiSettings:QCSUrl:Service"]"
             },
+            gpcsUrl: "@Configuration["ApiSettings:GPCSUrl"]",
             host: "@(Context.Request.PathBase)@(Url.Action("Index", "Application"))"
         };
 
@@ -215,7 +216,7 @@
                             </ul>
                         </li>
 
-                        <!-- Audit Log -->
+                        @* <!-- Audit Log -->
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Audit" asp-action="Index">
                                 Audit Log
@@ -242,7 +243,7 @@
                             <a class="nav-link" asp-area="" asp-controller="Settings" asp-action="Index">
                                 Settings
                             </a>
-                        </li>
+                        </li> *@
                         <!-- Audit Log for System Audit Trail -->
                     </ul>
 
@@ -271,8 +272,8 @@
     <footer class="footer">
         <div class="container">
             <span>&copy; 2025 Data Maintenance System</span>
-            <span class="mx-2">•</span>
-            <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            @* <span class="mx-2">•</span>
+            <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a> *@
         </div>
     </footer>
     <script src="~/lib/font-awesome/js/all.min.js"></script>

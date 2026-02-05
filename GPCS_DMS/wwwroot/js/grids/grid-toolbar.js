@@ -2,6 +2,7 @@ class GridToolbarManager {
     constructor(gridInstance, options = {}) {
         this.gridInstance = gridInstance;
         this.options = options;
+        this.totalCountElement = null;
     }
 
     prepareToolbar(e, callbacks = {}) {
@@ -15,6 +16,7 @@ class GridToolbarManager {
                 const $label = $('<span class="total-count-label" style="font-weight: 400; color: #1890ff; font-size: 14px;">Loading...</span>');
                 $container.append($label);
                 
+                this.totalCountElement = $label;
                 setTimeout(() => {
                     this._updateTotalCount();
                 }, 500);
@@ -75,7 +77,7 @@ class GridToolbarManager {
             }
         }
 
-        // Reset State button (ซ่อนเมื่อ clear filters)
+        // Reset State button
         if (this.options.enableStateStorage) {
             toolbarItems.push({
                 location: 'after',

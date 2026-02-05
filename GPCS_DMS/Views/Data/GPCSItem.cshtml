@@ -1,0 +1,28 @@
+@{
+    ViewData["Title"] = "GPCS Item";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/grid.css" asp-append-version="true" />
+}
+
+<div class="container-fluid">
+    <div class="jp-minimal-header">
+        <h2>GPCS Item Management</h2>
+        <p>Manage your GPCS items efficiently using the grid below.</p>
+    </div>
+    <div class="grid-wrapper">
+        <div id="gridGPCSItem"></div>
+    </div>
+</div>
+
+@section Scripts{
+    <partial name="_GridScripts" />
+    <script src="~/js/grids/configs/gpcs-item-grid-config.js"></script>
+    
+    <script>
+        $(document).ready(function () {
+            const grid = GridFactory.createGrid(ItemGridConfig);
+        });
+    </script>
+}

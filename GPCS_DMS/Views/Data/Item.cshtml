@@ -1,0 +1,62 @@
+@{
+    ViewData["Title"] = "Data Item";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/grid.css" asp-append-version="true" />
+    <style>
+        /* Pastel Red */
+        .expiry-expired td:first-child {
+            border-left: 3px solid #ffb3ba !important;
+        }
+        
+        /* Pastel Orange */
+        .expiry-critical td:first-child {
+            border-left: 3px solid #ffcc99 !important;
+        }
+        
+        /* Pastel Yellow  */
+        .expiry-warning td:first-child {
+            border-left: 3px solid #ffffba !important;
+        }
+        
+        /* Pastel Green */
+        .expiry-notice td:first-child {
+            border-left: 3px solid #bae1ba !important;
+        }
+
+        .expiry-expired,
+        .expiry-critical,
+        .expiry-warning,
+        .expiry-notice {
+            background-color: #fafafa !important;
+        }
+
+        .expiry-expired:hover,
+        .expiry-critical:hover,
+        .expiry-warning:hover,
+        .expiry-notice:hover {
+            background-color: #f5f5f5 !important;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="jp-minimal-header">
+        <h2>Data Item Management</h2>
+        <p>Manage your data items efficiently using the grid below.</p>
+    </div>
+    <div class="grid-wrapper">
+        <div id="gridDataItem"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_GridScripts" />
+    <script src="~/js/grids/configs/data-item-grid-config.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            const grid = GridFactory.createGrid(DataItemGridConfig);
+        });
+    </script>
+}
