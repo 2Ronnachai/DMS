@@ -146,11 +146,6 @@ const DataItemGridConfig = {
             width: 100,
         }),
 
-        // Group of Goods
-        // GridHelper.createColumn('groupOfGoods', 'Group of Goods', {
-        //     width: 150,
-        // }),
-
         GridHelper.createLookupColumn('groupOfGoods', 'Group of Goods',
             groupOfGoodsDataSource,
             'displayName',

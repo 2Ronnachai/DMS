@@ -33,12 +33,6 @@
         .grid-wrapper {
             height: calc(100vh - 250px);
             min-height: 500px;
-            position: relative;
-        }
-
-        .dx-datagrid {
-            height: 100%;
-            width: 100%;
         }
 
         .dx-datagrid-filter-panel .dx-datagrid-filter-panel-text,

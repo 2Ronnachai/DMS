@@ -18,12 +18,14 @@
     justify-content: center;
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
     transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
 .loading-overlay.show {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 /* Loading Container */
@@ -69,6 +71,7 @@
     justify-content: center;
     z-index: 100;
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.2s ease;
 }
 
@@ -79,6 +82,7 @@
 
 .loading-local.show {
     opacity: 1;
+    pointer-events: auto;
 }
 
 .loading-content {

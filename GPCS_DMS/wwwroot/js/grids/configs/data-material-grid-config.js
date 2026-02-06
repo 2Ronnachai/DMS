@@ -1,7 +1,7 @@
 const DataMaterialGridConfig = {
     gridId: 'gpcsDataMaterialGrid',
     container: '#gridDataMaterial',
-    endpoint: window.APP_CONFIG.baseUrl + 'dxGridDataMaterials/',
+    endpoint: window.APP_CONFIG.baseUrl + 'dxGridDataMaterials',
     keyField: 'id',
     exportFileName: 'Data_Material',
     columns: [

@@ -95,7 +95,36 @@ class GridToolbarManager {
 
     _updateTotalCount() {
         setTimeout(() => {
-            const count = window.gridTotalCount || 0;
+            let count = 0;
+
+            if (this.gridInstance && this.gridInstance.getDataSource) {
+                try {
+                    const dataSource = this.gridInstance.getDataSource();
+
+                    if (dataSource) {
+                        if (typeof dataSource.totalCount === 'function') {
+                            const total = dataSource.totalCount();
+                            if (typeof total === 'number' && !isNaN(total)) {
+                                count = total;
+                            }
+                        }
+
+                        if (count === 0 && typeof dataSource.items === 'function') {
+                            const items = dataSource.items();
+                            if (Array.isArray(items)) {
+                                count = items.length;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to calculate grid total count', e);
+                }
+            }
+
+            if (count === 0 && typeof window !== 'undefined' && typeof window.gridTotalCount === 'number') {
+                count = window.gridTotalCount;
+            }
+
             const $label = $('.total-count-label');
             if ($label.length > 0) {
                 $label.html(`<i class="fa fa-list"></i> Total: ${count.toLocaleString()} record${count !== 1 ? 's' : ''}`);

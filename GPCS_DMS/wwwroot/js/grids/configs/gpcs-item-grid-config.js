@@ -1,7 +1,7 @@
 const ItemGridConfig = {
     gridId: 'gpcsItemGrid',
     container: '#gridGPCSItem',
-    endpoint: window.APP_CONFIG.gpcsUrl + 'dxGridAdTmItems/',
+    endpoint: window.APP_CONFIG.gpcsUrl + 'dxGridAdTmItems',
     keyField: 'itemCode',
     exportFileName: 'GPCS_Items',
 

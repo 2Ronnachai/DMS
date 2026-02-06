@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Supplier Data";
+    ViewData["Title"] = "Supplier Settings";
 }
 
 @section Styles {
@@ -8,20 +8,22 @@
 
 <div class="container-fluid">
     <div class="jp-minimal-header">
-        <h2>Supplier Data Management</h2>
-        <p>Manage your supplier data efficiently using the grid below.</p>
+        <h2>Supplier Management</h2>
+        <p>Manage your supplier settings efficiently using the grid below.</p>
     </div>
     <div class="grid-wrapper">
-        <div id="gridDataSupplier"></div>
+        <div id="gridSupplierManagement"></div>
     </div>
 </div>
+
 @section Scripts {
     <partial name="_GridScripts" />
     <script src="~/js/grids/configs/data-supplier-grid-config.js"></script>
+    <script src="~/js/grids/managements/supplier-management-config.js"></script>
     
     <script>
         $(document).ready(function () {
-            const grid = GridFactory.createGrid(DataSupplierGridConfig);
+            const grid = GridFactory.createGrid(SupplierManagementGridConfig);
         });
     </script>
 }

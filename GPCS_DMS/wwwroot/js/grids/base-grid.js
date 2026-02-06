@@ -52,6 +52,10 @@ class BaseGrid {
             enableEditing: options.enableEditing ?? false,
             editMode: options.editMode || 'row',
 
+            // Delete confirmation (shared logic)
+            enableConfirmDelete: options.enableConfirmDelete ?? false,
+            deleteConfirmOptions: options.deleteConfirmOptions || null,
+
             // Export
             exportFileName: options.exportFileName || 'DataExport',
 
@@ -62,6 +66,11 @@ class BaseGrid {
             onRowClick: options.onRowClick || null,
             onToolbarPreparing: options.onToolbarPreparing || null,
             onRowPrepared: options.onRowPrepared || null,
+            onInitNewRow : options.onInitNewRow || null,
+            // Advanced override: if provided, caller fully controls delete behavior
+            onRowRemoving: options.onRowRemoving || null,
+
+            // ...other passed
 
             ...options
         };
@@ -167,10 +176,14 @@ class BaseGrid {
             // Filters
             filterRow: this.options.enableFilterRow ? {
                 visible: true,
-                applyFilter: 'auto'
+                applyFilter: 'auto',
             } : { visible: false },
 
             headerFilter: this.options.enableHeaderFilter ? {
+                allowSelectAll: true,
+                search: {
+                    enabled: true,
+                },
                 visible: true
             } : { visible: false },
 
@@ -212,17 +225,17 @@ class BaseGrid {
             } : { enabled: false },
 
             // Editing
-            editing: this.options.enableEditing ? {
-                mode: this.options.editMode,
+            editing: this.options.editing || (this.options.enableEditing ? {
+                mode: this.options.editMode || 'row',
                 allowUpdating: true,
                 allowDeleting: true,
-                allowAdding: true
+                allowAdding: true,
+                useIcons: true
             } : {
                 allowUpdating: false,
                 allowDeleting: false,
                 allowAdding: false
-            },
-
+            }),
             // Height
             height: this.options.height || undefined,
 
@@ -282,6 +295,73 @@ class BaseGrid {
                     this.options.onRowPrepared(e);
                 }
             },
+
+            onInitNewRow: (e) => {
+                if(this.options.onInitNewRow) {
+                    this.options.onInitNewRow(e);
+                }
+            },
+
+            onRowRemoving: (e) => {
+                const grid = e.component;
+
+                // If user supplied a custom handler, let them own the behavior
+                if (this.options.onRowRemoving) {
+                    this.options.onRowRemoving(e);
+                    return;
+                }
+
+                // If shared confirm-delete is not enabled, do nothing
+                if (!this.options.enableConfirmDelete) {
+                    return;
+                }
+
+                // Prevent recursion when we call deleteRow programmatically
+                if (grid.__skipDeleteConfirm) {
+                    grid.__skipDeleteConfirm = false;
+                    return;
+                }
+
+                // Cancel default delete; we'll decide after dialog
+                e.cancel = true;
+
+                if (grid.__isDeletingWithConfirm) {
+                    return;
+                }
+                grid.__isDeletingWithConfirm = true;
+
+                const defaultOptions = {
+                    title: 'Confirm Delete',
+                    message: 'Are you sure you want to delete this record?',
+                    type: 'warning',
+                    okText: 'Delete',
+                    cancelText: 'Cancel'
+                };
+
+                const dialogOptions = {
+                    ...defaultOptions,
+                    ...(this.options.deleteConfirmOptions || {})
+                };
+
+                this.dialog.confirm(dialogOptions)
+                    .then((confirmed) => {
+                        if (!confirmed) {
+                            return;
+                        }
+
+                        const rowIndex = typeof e.rowIndex === 'number'
+                            ? e.rowIndex
+                            : grid.getRowIndexByKey(e.key);
+
+                        if (rowIndex >= 0) {
+                            grid.__skipDeleteConfirm = true;
+                            grid.deleteRow(rowIndex);
+                        }
+                    })
+                    .finally(() => {
+                        grid.__isDeletingWithConfirm = false;
+                    });
+            }
         };
     }
 
@@ -357,6 +437,8 @@ class BaseGrid {
             allowGrouping: false,
             allowHeaderFiltering: false,
             allowExporting: false,
+            allowEditing: false,
+            formItem: { visible: false },
             fixed: true,
             fixedPosition: 'left',
             cellTemplate: (container, options) => {

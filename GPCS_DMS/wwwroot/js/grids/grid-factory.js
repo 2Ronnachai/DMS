@@ -1,5 +1,5 @@
 class GridFactory {
-    static createGrid(config) {
+    static async createGrid(config) {
         const {
             gridId,
             container,
@@ -7,53 +7,56 @@ class GridFactory {
             keyField,
             columns,
             exportFileName,
-            paramaters = {},
+            parameters = {},
             ...otherOptions
         } = config;
 
         // Validation
-        if (typeof GridCustomStore === 'undefined') {
-            console.error('GridCustomStore is not defined!');
+        if (typeof DxGridStore === 'undefined') {
+            console.error('DxGridStore is not defined!');
             return null;
         }
+
         if (typeof BaseGrid === 'undefined') {
             console.error('BaseGrid is not defined!');
             return null;
         }
 
-        // Create Store
-        const store = new GridCustomStore({
+        // Create Store 
+        const store = await DxGridStore.create({
             endpoint: endpoint,
             keyField: keyField,
-            parameters: paramaters,
-
-            onBeforeAction: (op, data) => {
-                if (op === "load") {
-                    appLoading.show(`Loading ${exportFileName}...`);
-                }
-            },
-
-            onAfterAction: (op, data) => {
-                if (op === "load") {
+            parameters: parameters,
+            callbacks: {
+                onBeforeAction: (op, data) => {
+                    if (op === "load") {
+                        appLoading.show(`Loading ${exportFileName}...`);
+                    }
+                },
+                onAfterAction: (op, data) => {
+                    if (op === "load") {
+                        appLoading.hide();
+                    }
+                },
+                onError: (error, op) => {
                     appLoading.hide();
+                    appNotification.show(
+                        `Failed to ${op} data: ${error.message}`,
+                        "error",
+                        { duration: 3000 }
+                    );
                 }
             },
-
-            onError: (error, op) => {
-                appLoading.hide();
-                appNotification.show(
-                    `Failed to ${op} data: ${error.message}`,
-                    "error",
-                    { duration: 3000 }
-                );
-            }
+            options: {
+                enableLogging: false
+            },
         });
 
         // Default Grid Options
         const defaultOptions = {
             gridId: gridId,
             container: container,
-            dataSource: store.getStore(),
+            dataSource: store,
             columns: columns,
             keyExpr: keyField,
 
@@ -77,12 +80,7 @@ class GridFactory {
             scrollingMode: 'virtual',
 
             // Remote Operations
-            remoteOperations: {
-                filtering: true,
-                sorting: true,
-                grouping: true,
-                paging: true
-            },
+            remoteOperations: true,
 
             // Editing
             enableEditing: false,
@@ -159,19 +157,27 @@ class GridFactory {
             // Audit Trail
             GridHelper.createColumn('createdBy', 'Created By', {
                 width: 120,
-                allowEditing: false
+                allowEditing: false,
+                visible: false,
+                formItem: { visible: false }
             }),
             GridHelper.createDateColumn('createdAt', 'Created At', 'dd/MM/yyyy HH:mm', {
                 width: 150,
-                allowEditing: false
+                allowEditing: false,
+                visible: false,
+                formItem: { visible: false }
             }),
             GridHelper.createColumn('updatedBy', 'Updated By', {
                 width: 120,
-                allowEditing: false
+                allowEditing: false,
+                visible: false,
+                formItem: { visible: false }
             }),
             GridHelper.createDateColumn('updatedAt', 'Updated At', 'dd/MM/yyyy HH:mm', {
                 width: 150,
-                allowEditing: false
+                allowEditing: false,
+                visible: false,
+                formItem: { visible: false }
             }),
         ];
     }

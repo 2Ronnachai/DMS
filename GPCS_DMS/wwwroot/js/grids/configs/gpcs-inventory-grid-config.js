@@ -1,7 +1,7 @@
 const InventoryGridConfig = {
     gridId: 'gpcsInventoryGrid',
     container: '#gridGPCSInventory',
-    endpoint: window.APP_CONFIG.gpcsUrl + 'dxGridIvTmInventories/',
+    endpoint: window.APP_CONFIG.gpcsUrl + 'dxGridIvTmInventories',
     keyField: 'materialCode',
     exportFileName: 'GPCS_Inventory',
 

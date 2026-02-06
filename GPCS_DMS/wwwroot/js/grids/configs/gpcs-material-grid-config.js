@@ -1,7 +1,7 @@
 const MaterialGridConfig = {
     gridId: 'gpcsMaterialGrid',
     container: '#gridGPCSMaterial',
-    endpoint: window.APP_CONFIG.gpcsUrl + 'dxGridAdTmMaterials/',
+    endpoint: window.APP_CONFIG.gpcsUrl + 'dxGridAdTmMaterials',
     keyField: 'materialCode',
     exportFileName: 'GPCS_Materials',
     
