@@ -1,0 +1,27 @@
+@{
+    ViewData["Title"] = "Purchaser Settings";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/grid.css" asp-append-version="true" />
+}
+
+<div class="container-fluid">
+    <div class="jp-minimal-header">
+        <h2>Purchaser Management</h2>
+        <p>Manage your purchaser settings efficiently using the grid below.</p> 
+    </div>
+    <div class="grid-wrapper">
+        <div id="gridPurchaserManagement"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_GridScripts" />
+    <script src="~/js/grids/managements/purchaser-management-config.js"></script>
+    
+    <script>
+        $(document).ready(function () {
+            const grid = GridFactory.createGrid(PurchaserManagementGridConfig);
+        });
+    </script>
+}

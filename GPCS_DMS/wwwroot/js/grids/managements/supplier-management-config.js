@@ -25,17 +25,29 @@ SupplierManagementGridConfig.editing = {
         items: [
             {
                 dataField: 'code',
+                label: { text: 'Code' },
                 colSpan: 1,
+                editorOptions:{
+                    stylingMode: 'filled',
+                },
                 validationRules: [{ type: 'required' }],
             },
             {
                 dataField: 'name',
+                label: { text: 'Name' },
                 colSpan: 3,
+                editorOptions:{
+                    stylingMode: 'filled',
+                },
                 validationRules: [{ type: 'required' }],
             },
             {
                 dataField: 'isActive',
+                label: { text: 'Active' },
                 colSpan: 1,
+                editorOptions:{
+                    stylingMode: 'filled',
+                },
             }
         ]
     }

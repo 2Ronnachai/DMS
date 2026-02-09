@@ -1,0 +1,28 @@
+@{
+    ViewData["Title"] = "Account Settings";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/grid.css" asp-append-version="true" />
+}
+
+<div class="container-fluid">
+    <div class="jp-minimal-header">
+        <h2>Account Management</h2>
+        <p>Manage your account settings efficiently using the grid below.</p>
+    </div>
+    <div class="grid-wrapper">
+        <div id="gridAccountManagement"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_GridScripts" />
+    <script src="~/js/grids/managements/account-management-config.js"></script>
+    
+    <script>
+        $(document).ready(function () {
+            const grid = GridFactory.createGrid(AccountManagementGridConfig);
+        });
+    </script>
+}

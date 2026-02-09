@@ -1,0 +1,28 @@
+@{
+    ViewData["Title"] = "Unit Management";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/grid.css" asp-append-version="true" />
+}
+
+<div class="container-fluid">
+    <div class="jp-minimal-header">
+        <h2>Unit Management</h2>
+        <p>Manage your unit settings efficiently using the grid below.</p>
+    </div>
+    <div class="grid-wrapper">
+        <div id="gridUnitManagement"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_GridScripts" />
+    <script src="~/js/grids/managements/unit-management-config.js"></script>
+    
+    <script>
+        $(document).ready(function () {
+            const grid = GridFactory.createGrid(UnitManagementGridConfig);
+        });
+    </script>
+}

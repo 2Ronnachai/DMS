@@ -1,0 +1,28 @@
+@{
+    ViewData["Title"] = "Cost Center Management";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/grid.css" asp-append-version="true" />
+}
+
+<div class="container-fluid">
+    <div class="jp-minimal-header">
+        <h2>Cost Center Management</h2>
+        <p>Manage your cost center settings efficiently using the grid below.</p>
+    </div>
+    <div class="grid-wrapper">
+        <div id="gridCostCenterManagement"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_GridScripts" />
+    <script src="~/js/grids/managements/costcenter-management-config.js"></script>
+    
+    <script>
+        $(document).ready(function () {
+            const grid = GridFactory.createGrid(CostCenterManagementGridConfig);
+        });
+    </script>
+}

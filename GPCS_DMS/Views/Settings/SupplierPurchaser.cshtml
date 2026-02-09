@@ -1,0 +1,26 @@
+@{
+    ViewData["Title"] = "Supplier & Purchaser Management";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/grid.css" asp-append-version="true" />
+}
+
+<div class="container-fluid">
+    <div class="jp-minimal-header">
+        <h2>Supplier & Purchaser Management</h2>
+        <p>Manage your supplier and purchaser settings efficiently using the grids below.</p>
+    </div>
+    <div class="grid-wrapper">
+        <div id="gridSupplierPurchaserManagement"></div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_GridScripts" />
+    <script src="~/js/grids/managements/supplier-purchaser-management-config.js"></script>
+    
+    <script>
+        $(document).ready(function () {
+            const supplierPurchaserGrid = GridFactory.createGrid(SupplierPurchaserManagementGridConfig);
+        });
+    </script>
+}

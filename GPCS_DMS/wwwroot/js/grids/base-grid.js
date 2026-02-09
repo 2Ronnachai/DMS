@@ -69,6 +69,9 @@ class BaseGrid {
             onInitNewRow : options.onInitNewRow || null,
             // Advanced override: if provided, caller fully controls delete behavior
             onRowRemoving: options.onRowRemoving || null,
+            onEditingStart: options.onEditingStart || null,
+            onEditorPreparing: options.onEditorPreparing || null,
+            onEditorPrepared: options.onEditorPrepared || null,
 
             // ...other passed
 
@@ -361,6 +364,24 @@ class BaseGrid {
                     .finally(() => {
                         grid.__isDeletingWithConfirm = false;
                     });
+            },
+
+            onEditingStart: (e) => {
+                if (this.options.onEditingStart) {
+                    this.options.onEditingStart(e);
+                }
+            },
+
+            onEditorPreparing: (e) => {
+                if (this.options.onEditorPreparing) {
+                    this.options.onEditorPreparing(e);
+                }
+            },
+
+            onEditorPrepared: (e) => {
+                if (this.options.onEditorPrepared) {
+                    this.options.onEditorPrepared(e);
+                }
             }
         };
     }
