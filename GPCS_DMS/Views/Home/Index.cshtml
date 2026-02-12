@@ -1,57 +1,782 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@section Styles{
+    <link rel="stylesheet" href="~/css/grid.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/application/app-dashboard.css" asp-append-version="true" />
 }
-@section Styles {
+<div class="dashboard-container">
+            <!-- Header -->
+            <div class="dashboard-header">
+                    <h1 class="dashboard-title">Application Dashboard</h1>
+                    <p class="dashboard-subtitle">Manage and track all your applications</p>
+                </div>
 
-}
+            <!-- Summary Cards -->
+            <div id="dashboard-summary" class="summary-grid"></div>
 
-<div class="text-center">
-    <a asp-controller="Application" asp-action="SetApplicationType" asp-route-applicationType="NewMaterialsItems" asp-route-id="3" class="btn btn-primary btn-lg mb-4">Create New Requisition</a>
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+            <!-- Filter Panel -->
+            <div class="filter-panel-container">
+                <div class="filter-panel-header">
+                    <button type="button" id="filter-toggle-btn" class="filter-toggle-btn">
+                        <i class="fas fa-filter"></i>
+                        <span>Filters</span>
+                        <i class="fas fa-chevron-down filter-toggle-icon"></i>
+                    </button>
+                </div>
+                <div id="dashboard-filter-panel" class="filter-panel filter-panel--collapsed">
+                    <div class="filter-row">
+                        <div class="filter-field">
+                            <label class="filter-label" for="filter-text">Keyword</label>
+                            <input id="filter-text" class="filter-input" type="text" placeholder="Search number, applicant..." />
+                        </div>
+                        <div class="filter-field">
+                            <label class="filter-label" for="filter-type">Application Type</label>
+                            <select id="filter-type" class="filter-select">
+                                <option value="">All types</option>
+                            </select>
+                        </div>
+                        <div class="filter-field">
+                            <label class="filter-label" for="filter-date-from">From Date</label>
+                            <input id="filter-date-from" class="filter-input" type="date" />
+                        </div>
+                        <div class="filter-field">
+                            <label class="filter-label" for="filter-date-to">To Date</label>
+                            <input id="filter-date-to" class="filter-input" type="date" />
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button type="button" id="filter-apply" class="filter-btn filter-btn--primary">
+                            <i class="fas fa-check"></i> Apply
+                        </button>
+                        <button type="button" id="filter-clear" class="filter-btn filter-btn--secondary">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Application Grid -->
+            <div id="application-list-container" class="application-list"></div>
+        </div>
+
+
 @section Scripts {
+    <partial name="_GridScripts" />
     <script>
-        document.addEventListener("DOMContentLoaded", async function() {
-            // Example usage of appCore and appNotification
-            @* appNotification.show("Welcome to the Home Page!", "success", 3000);
-            appNotification.show("This is an info message.", "info", 5000);
-            appNotification.show("Warning! Check your input.", "warning", 7000);
-            appNotification.show("Error occurred while loading data.", "error", 10000); *@
+        class AppDashboard {
+    constructor() {
+        this.container = document.getElementById('application-list-container');
+        this.tabsContainer = document.getElementById('dashboard-tabs');
+        this.summaryContainer = document.getElementById('dashboard-summary');
+        this.filterPanel = document.getElementById('dashboard-filter-panel');
+        this.filterToggleBtn = document.getElementById('filter-toggle-btn');
+        this.filterControls = null;
+        
+        this.currentTab = 'draft';
+        this.userRole = 'both'; // 'user' | 'approver' | 'both'
+        this.isLoading = false;
 
-            @* // Example usage of appDialog
-            const result = await appDialog.confirm({
-                title: "Please Confirm",
-                message: "Do you want to proceed with this action?",
-                okText: "Yes",
-                cancelText: "No"
-            });
+        this.grid = null;
+        
+        // Mock Data
+        this.initMockData();
+    }
 
-            if (result) {
-                AppLoading.show("Processing your request...");
-                // Simulate some processing time
-                setTimeout(() => {
-                    appLoading.hide();
-                    appNotification.show("Action completed successfully!", "success", 3000);
-                }, 3000);
-            } else {
-                await appLoading.wrap(async () => {
-                    // Simulate some processing time
-                    return new Promise((resolve) => {
-                        setTimeout(() => {
-                            resolve();
-                        }, 2000);
-                    });
-                }, "Cancelling the action...");
+    initMockData() {
+        // Mock Summary Data
+        this.summary = {
+            draft: 5,
+            return: 3,
+            inProcess: 8,
+            complete: 12,
+            waitingApprove: 6,
+            approverComplete: 10
+        };
+
+        // Mock Application Types
+        this.applicationTypes = [
+            { name: 'NewMaterialsItems', displayName: 'Materials Request' },
+            { name: 'LeaveRequest', displayName: 'Leave Request' },
+            { name: 'PurchaseOrder', displayName: 'Purchase Order' }
+        ];
+
+        // Mock Applications Data
+        this.allApplications = {
+            draft: [
+                {
+                    id: 1,
+                    applicationNumber: 'APP-2024-001',
+                    applicationType: 'NewMaterialsItems',
+                    status: 'draft',
+                    createdDate: '2024-01-15T10:30:00',
+                    applicant: 'สมชาย ใจดี',
+                    department: 'IT Department',
+                    description: 'ขอเบิกวัสดุสำนักงาน เครื่องเขียน และอุปกรณ์คอมพิวเตอร์'
+                },
+                {
+                    id: 2,
+                    applicationNumber: 'APP-2024-002',
+                    applicationType: 'LeaveRequest',
+                    status: 'draft',
+                    createdDate: '2024-01-16T14:20:00',
+                    applicant: 'สมหญิง รักงาน',
+                    department: 'HR Department',
+                    description: 'ขอลาพักร้อน 3 วัน'
+                },
+                {
+                    id: 3,
+                    applicationNumber: 'APP-2024-003',
+                    applicationType: 'PurchaseOrder',
+                    status: 'draft',
+                    createdDate: '2024-01-17T09:15:00',
+                    applicant: 'สมศักดิ์ มานะ',
+                    department: 'Procurement',
+                    description: 'จัดซื้อเครื่องพิมพ์ Laser Printer 2 เครื่อง'
+                },
+                {
+                    id: 4,
+                    applicationNumber: 'APP-2024-004',
+                    applicationType: 'NewMaterialsItems',
+                    status: 'draft',
+                    createdDate: '2024-01-18T11:45:00',
+                    applicant: 'วิไล สวยงาม',
+                    department: 'Marketing',
+                    description: 'ขอเบิกวัสดุโฆษณา โบรชัวร์ และแผ่นพับ'
+                },
+                {
+                    id: 5,
+                    applicationNumber: 'APP-2024-005',
+                    applicationType: 'LeaveRequest',
+                    status: 'draft',
+                    createdDate: '2024-01-19T08:30:00',
+                    applicant: 'ประยุทธ์ ขยัน',
+                    department: 'Finance',
+                    description: 'ขอลากิจส่วนตัว 1 วัน'
+                }
+            ],
+            return: [
+                {
+                    id: 6,
+                    applicationNumber: 'APP-2024-006',
+                    applicationType: 'PurchaseOrder',
+                    status: 'return',
+                    createdDate: '2024-01-10T13:20:00',
+                    applicant: 'สมปอง เรียบร้อย',
+                    department: 'IT Department',
+                    description: 'จัดซื้อ Server - กรุณาระบุ Spec ให้ชัดเจน'
+                },
+                {
+                    id: 7,
+                    applicationNumber: 'APP-2024-007',
+                    applicationType: 'NewMaterialsItems',
+                    status: 'return',
+                    createdDate: '2024-01-12T10:00:00',
+                    applicant: 'มานี รักสะอาด',
+                    department: 'Admin',
+                    description: 'ขอเบิกอุปกรณ์ทำความสะอาด - เอกสารไม่ครบ'
+                },
+                {
+                    id: 8,
+                    applicationNumber: 'APP-2024-008',
+                    applicationType: 'LeaveRequest',
+                    status: 'return',
+                    createdDate: '2024-01-14T15:30:00',
+                    applicant: 'สมบัติ ดีมาก',
+                    department: 'Sales',
+                    description: 'ขอลาป่วย - กรุณาแนบใบรับรองแพทย์'
+                }
+            ],
+            inProcess: [
+                {
+                    id: 9,
+                    applicationNumber: 'APP-2024-009',
+                    applicationType: 'PurchaseOrder',
+                    status: 'inProcess',
+                    createdDate: '2024-01-13T09:00:00',
+                    applicant: 'ชัยวัฒน์ ก้าวหน้า',
+                    department: 'IT Department',
+                    description: 'จัดซื้อ Notebook 10 เครื่อง สำหรับพนักงานใหม่'
+                },
+                {
+                    id: 10,
+                    applicationNumber: 'APP-2024-010',
+                    applicationType: 'NewMaterialsItems',
+                    status: 'inProcess',
+                    createdDate: '2024-01-14T11:30:00',
+                    applicant: 'สุดา น่ารัก',
+                    department: 'HR Department',
+                    description: 'ขอเบิกวัสดุสำหรับจัดงาน Company Outing'
+                },
+                {
+                    id: 11,
+                    applicationNumber: 'APP-2024-011',
+                    applicationType: 'LeaveRequest',
+                    status: 'inProcess',
+                    createdDate: '2024-01-15T14:00:00',
+                    applicant: 'ธนา เพียรพยายาม',
+                    department: 'Production',
+                    description: 'ขอลาพักร้อน 5 วัน เดือนกุมภาพันธ์'
+                }
+            ],
+            complete: [
+                {
+                    id: 12,
+                    applicationNumber: 'APP-2024-012',
+                    applicationType: 'NewMaterialsItems',
+                    status: 'complete',
+                    createdDate: '2024-01-08T10:00:00',
+                    completedDate: '2024-01-18T16:30:00',
+                    applicant: 'วิชัย สำเร็จ',
+                    department: 'Finance',
+                    description: 'ขอเบิกกระดาษ A4 และหมึกพิมพ์'
+                },
+                {
+                    id: 13,
+                    applicationNumber: 'APP-2024-013',
+                    applicationType: 'LeaveRequest',
+                    status: 'complete',
+                    createdDate: '2024-01-09T09:30:00',
+                    completedDate: '2024-01-19T10:00:00',
+                    applicant: 'นภา สุขใจ',
+                    department: 'Marketing',
+                    description: 'ขอลาป่วย 2 วัน'
+                }
+            ],
+            waitingApprove: [
+                {
+                    id: 14,
+                    applicationNumber: 'APP-2024-014',
+                    applicationType: 'PurchaseOrder',
+                    status: 'waitingApprove',
+                    createdDate: '2024-01-16T13:00:00',
+                    applicant: 'สมชาติ รอบคอบ',
+                    department: 'IT Department',
+                    description: 'จัดซื้อ Software License Microsoft 365 - 50 User'
+                },
+                {
+                    id: 15,
+                    applicationNumber: 'APP-2024-015',
+                    applicationType: 'NewMaterialsItems',
+                    status: 'waitingApprove',
+                    createdDate: '2024-01-17T10:30:00',
+                    applicant: 'ปิยะ ดีเลิศ',
+                    department: 'Admin',
+                    description: 'ขอเบิกอุปกรณ์สำนักงาน โต๊ะ เก้าอี้ ตู้เอกสาร'
+                },
+                {
+                    id: 16,
+                    applicationNumber: 'APP-2024-016',
+                    applicationType: 'LeaveRequest',
+                    status: 'waitingApprove',
+                    createdDate: '2024-01-18T14:45:00',
+                    applicant: 'อรุณ ตื่นเช้า',
+                    department: 'Sales',
+                    description: 'ขอลาพักร้อน 7 วัน เดือนมีนาคม'
+                }
+            ],
+            approverComplete: [
+                {
+                    id: 17,
+                    applicationNumber: 'APP-2024-017',
+                    applicationType: 'PurchaseOrder',
+                    status: 'complete',
+                    createdDate: '2024-01-10T11:00:00',
+                    completedDate: '2024-01-19T15:00:00',
+                    applicant: 'สมหมาย เจริญ',
+                    department: 'Procurement',
+                    description: 'จัดซื้อวัสดุก่อสร้าง สำหรับซ่อมแซมอาคาร'
+                }
+            ]
+        };
+    }
+
+    async init() {
+        this.showLoading();
+        
+        // จำลองการโหลดข้อมูล
+        await this.delay(500);
+        
+        // Render UI
+        this.renderSummaryCards();
+        this.initFilterPanel();
+        this.createGrid();
+        await this.loadApplicationsByTab(this.currentTab);
+        
+        // Setup event listeners
+        this.setupEventListeners();
+
+    }
+
+    async loadApplicationsByTab(tabKey) {
+        if (this.isLoading) return;
+        
+        this.isLoading = true;
+        // จำลอง delay ของ API
+        await this.delay(300);
+        
+        this.currentApplications = this.allApplications[tabKey] || [];
+        this.applyFilterAndUpdateGrid();
+        
+        this.isLoading = false;
+    }
+
+    async reloadData() {
+        console.log('🔄 Reloading dashboard data...');
+        
+        // จำลองการ reload
+        await this.delay(300);
+        
+        // อัพเดท summary (จำลอง)
+        this.summary.draft += 1;
+        
+        this.renderTabs();
+        this.updateSummaryCards(this.summary);
+        await this.loadApplicationsByTab(this.currentTab);
+        
+        console.log('✅ Data reloaded successfully!');
+    }
+
+    renderTabs() {
+        const tabs = this.getTabsConfig();
+        
+        this.tabsContainer.innerHTML = tabs.map(tab => `
+            <li class="nav-item" role="presentation">
+                <button 
+                    class="nav-link ${tab.key === this.currentTab ? 'active' : ''}" 
+                    data-tab="${tab.key}"
+                    type="button"
+                    role="tab">
+                    ${tab.label}
+                    <span class="badge">${this.summary[tab.key] || 0}</span>
+                </button>
+            </li>
+        `).join('');
+    }
+
+    getTabsConfig() {
+        const userTabs = [
+            { key: 'draft', label: 'Draft' },
+            { key: 'return', label: 'Return' },
+            { key: 'inProcess', label: 'In Process' },
+            { key: 'complete', label: 'Complete' }
+        ];
+
+        const approverTabs = [
+            { key: 'waitingApprove', label: 'Waiting Approve' },
+            { key: 'approverComplete', label: 'Complete' }
+        ];
+
+        if (this.userRole === 'both') {
+            return [...userTabs, ...approverTabs];
+        } else if (this.userRole === 'approver') {
+            return approverTabs;
+        }
+        return userTabs;
+    }
+
+    renderSummaryCards() {
+        if (!this.summaryContainer || !this.summary) return;
+
+        const cards = [
+            { key: 'draft', label: 'Draft', hint: 'My draft applications' },
+            { key: 'return', label: 'Returned', hint: 'Need your action' },
+            { key: 'inProcess', label: 'In Process', hint: 'Currently progressing' },
+            { key: 'complete', label: 'Complete', hint: 'Completed recently' },
+            { key: 'waitingApprove', label: 'Waiting Approve', hint: 'For your approval' },
+            { key: 'approverComplete', label: 'Approved', hint: 'You approved' }
+        ];
+
+        this.summaryContainer.innerHTML = cards.map(card => `
+            <div class="summary-card ${card.key === this.currentTab ? 'summary-card--active' : ''}" data-tab="${card.key}">
+                <div class="summary-title">${card.label}</div>
+                <div class="summary-value" data-summary-key="${card.key}">
+                    ${this.summary[card.key] || 0}
+                </div>
+                <div class="summary-tag">${card.hint}</div>
+            </div>
+        `).join('');
+
+        this.highlightActiveSummaryCard();
+    }
+
+    updateSummaryCards(newSummary) {
+        if (!this.summaryContainer || !newSummary) return;
+
+        const merged = { ...this.summary, ...newSummary };
+
+        Object.keys(merged).forEach(key => {
+            const el = this.summaryContainer.querySelector(`[data-summary-key="${key}"]`);
+            if (!el) return;
+
+            const oldValue = parseInt(el.textContent || '0', 10) || 0;
+            const newValue = merged[key] ?? 0;
+
+            if (oldValue === newValue) {
+                el.textContent = newValue;
+                return;
             }
 
+            const cssClass = newValue > oldValue ? 'summary-value--up' : 'summary-value--down';
+            el.textContent = newValue;
+            el.classList.remove('summary-value--up', 'summary-value--down');
+            void el.offsetWidth; // restart animation
+            el.classList.add(cssClass);
+
             setTimeout(() => {
-                appDialog.alert({
-                    title: "Alert",
-                    message: "This is an important alert message.",
-                    okText: "Got it"
-                });
-            }, 20000); *@
+                el.classList.remove(cssClass);
+            }, 500);
         });
+
+        this.summary = merged;
+    }
+
+    highlightActiveSummaryCard() {
+        if (!this.summaryContainer) return;
+
+        const cards = this.summaryContainer.querySelectorAll('.summary-card');
+        cards.forEach(card => {
+            const key = card.dataset.tab;
+            if (key === this.currentTab) {
+                card.classList.add('summary-card--active');
+            } else {
+                card.classList.remove('summary-card--active');
+            }
+        });
+    }
+
+    createGrid() {
+        if (!this.container || !window.BaseGrid) return;
+
+        const typeMap = Object.fromEntries(this.applicationTypes.map(t => [t.name, t.displayName]));
+        const getStatusConfig = this.getStatusConfig.bind(this);
+        const formatDate = this.formatDate.bind(this);
+
+        const columns = [
+            {
+                dataField: 'applicationNumber',
+                caption: 'Application No.',
+                width: 160
+            },
+            {
+                dataField: 'applicationType',
+                caption: 'Type',
+                width: 160,
+                cellTemplate: (container, options) => {
+                    const text = typeMap[options.value] || options.value || '-';
+                    $('<span>').text(text).appendTo(container);
+                }
+            },
+            {
+                dataField: 'status',
+                caption: 'Status',
+                width: 140,
+                cellTemplate: (container, options) => {
+                    const cfg = getStatusConfig(options.value);
+                    $('<span>')
+                        .addClass(`status-badge status-${cfg.class}`)
+                        .text(cfg.label)
+                        .appendTo(container);
+                }
+            },
+            {
+                dataField: 'createdDate',
+                caption: 'Created',
+                width: 190,
+                cellTemplate: (container, options) => {
+                    $('<span>')
+                        .text(formatDate(options.value))
+                        .appendTo(container);
+                }
+            },
+            {
+                dataField: 'applicant',
+                caption: 'Applicant',
+                width: 180
+            },
+            {
+                dataField: 'department',
+                caption: 'Department',
+                width: 180
+            },
+            {
+                dataField: 'description',
+                caption: 'Description',
+                minWidth: 240
+            }
+        ];
+
+        this.grid = new BaseGrid({
+            gridId: 'dashboardApplications',
+            container: '#application-list-container',
+            dataSource: [],
+            columns: columns,
+            height: '100%',
+            enableExport: true,
+            exportFileName: 'ApplicationsDashboard',
+            enableFilterRow: true,
+            enableFilterPanel: false,
+            enableHeaderFilter: true,
+            enableSearchPanel: false,
+            enableGrouping: false,
+            enablePaging: false,
+            enableVirtualScrolling: false,
+            showBorders: false,
+            hoverStateEnabled: true,
+            onToolbarPreparing: (e) => this.customizeToolbar(e)
+        });
+
+        this.grid.initialize();
+    }
+
+    applyFilterAndUpdateGrid() {
+        if (!this.grid) return;
+
+        const data = this.getFilteredApplications();
+        this.grid.updateDataSource(data || []);
+    }
+
+    getStatusConfig(status) {
+        const configs = {
+            draft: { class: 'draft', label: 'Draft' },
+            return: { class: 'return', label: 'Returned' },
+            inProcess: { class: 'inprocess', label: 'In Process' },
+            complete: { class: 'complete', label: 'Complete' },
+            waitingApprove: { class: 'waiting', label: 'Waiting Approve' }
+        };
+        return configs[status] || { class: 'draft', label: status };
+    }
+
+    customizeToolbar(e) {
+        const toolbar = e.toolbarOptions;
+        
+        // Remove total count item
+        toolbar.items = toolbar.items.filter(item => {
+            return !(item.location === 'before' && typeof item.template === 'function');
+        });
+        
+        // Add custom HTML button for Create New
+        toolbar.items.unshift({
+            location: 'before',
+            template: (data, index, element) => {
+                const $container = $('<div>').addClass('toolbar-create-container');
+                
+                const $button = $('<button>')
+                    .attr('type', 'button')
+                    .addClass('toolbar-btn toolbar-btn--primary')
+                    .html('<i class="fas fa-plus"></i> Create New <i class="fas fa-chevron-down"></i>')
+                    .on('click', (e) => {
+                        e.stopPropagation();
+                        $dropdown.toggle();
+                    });
+                
+                const $dropdown = $('<div>')
+                    .addClass('toolbar-dropdown')
+                    .css('display', 'none');
+                
+                this.applicationTypes.forEach(type => {
+                    const $item = $('<button>')
+                        .attr('type', 'button')
+                        .addClass('toolbar-dropdown-item')
+                        .html(`<i class="fas fa-file-alt"></i> ${type.displayName}`)
+                        .on('click', () => {
+                            $dropdown.hide();
+                            alert(`Create New ${type.displayName}`);
+                            // TODO: Navigate to create form
+                        });
+                    $dropdown.append($item);
+                });
+                
+                // Close dropdown when clicking outside
+                $(document).on('click', (e) => {
+                    if (!$(e.target).closest('.toolbar-create-container').length) {
+                        $dropdown.hide();
+                    }
+                });
+                
+                $container.append($button).append($dropdown);
+                $(element).append($container);
+            }
+        });
+    }
+
+    initFilterPanel() {
+        // Setup filter toggle
+        if (this.filterToggleBtn && this.filterPanel) {
+            this.filterToggleBtn.addEventListener('click', () => {
+                this.filterPanel.classList.toggle('filter-panel--collapsed');
+                const icon = this.filterToggleBtn.querySelector('.filter-toggle-icon');
+                icon.classList.toggle('fa-chevron-down');
+                icon.classList.toggle('fa-chevron-up');
+            });
+        }
+
+        const typeSelect = document.getElementById('filter-type');
+        const textInput = document.getElementById('filter-text');
+        const dateFromInput = document.getElementById('filter-date-from');
+        const dateToInput = document.getElementById('filter-date-to');
+        const applyBtn = document.getElementById('filter-apply');
+        const clearBtn = document.getElementById('filter-clear');
+
+        this.filterControls = {
+            typeSelect,
+            textInput,
+            dateFromInput,
+            dateToInput
+        };
+
+        // Populate type dropdown
+        if (typeSelect) {
+            this.applicationTypes.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.name;
+                opt.textContent = t.displayName;
+                typeSelect.appendChild(opt);
+            });
+        }
+
+        const onFilterChanged = () => this.applyFilterAndUpdateGrid();
+
+        // Event listeners
+        if (textInput) {
+            textInput.addEventListener('input', () => {
+                clearTimeout(this._filterTextTimer);
+                this._filterTextTimer = setTimeout(onFilterChanged, 300);
+            });
+        }
+
+        if (typeSelect) {
+            typeSelect.addEventListener('change', onFilterChanged);
+        }
+
+        if (dateFromInput) {
+            dateFromInput.addEventListener('change', onFilterChanged);
+        }
+
+        if (dateToInput) {
+            dateToInput.addEventListener('change', onFilterChanged);
+        }
+
+        if (applyBtn) {
+            applyBtn.addEventListener('click', onFilterChanged);
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                if (textInput) textInput.value = '';
+                if (typeSelect) typeSelect.value = '';
+                if (dateFromInput) dateFromInput.value = '';
+                if (dateToInput) dateToInput.value = '';
+                onFilterChanged();
+            });
+        }
+    }
+
+    getFilteredApplications() {
+        const items = this.currentApplications || [];
+        if (!items.length) return [];
+
+        const text = (this.filterControls?.textInput?.value || '').toLowerCase().trim();
+        const type = this.filterControls?.typeSelect?.value || '';
+        const fromStr = this.filterControls?.dateFromInput?.value || '';
+        const toStr = this.filterControls?.dateToInput?.value || '';
+
+        const fromDate = fromStr ? new Date(fromStr + 'T00:00:00') : null;
+        const toDate = toStr ? new Date(toStr + 'T23:59:59') : null;
+
+        return items.filter(app => {
+            if (type && app.applicationType !== type) return false;
+
+            if (fromDate || toDate) {
+                const created = app.createdDate ? new Date(app.createdDate) : null;
+                if (created) {
+                    if (fromDate && created < fromDate) return false;
+                    if (toDate && created > toDate) return false;
+                }
+            }
+
+            if (text) {
+                const haystack = [
+                    app.applicationNumber,
+                    app.applicant,
+                    app.department,
+                    app.description
+                ].filter(Boolean).join(' ').toLowerCase();
+
+                if (!haystack.includes(text)) return false;
+            }
+
+            return true;
+        });
+    }
+
+    showLoading() {
+        this.container.innerHTML = `
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+            </div>
+        `;
+    }
+
+    showEmpty() {
+        const emptyMessages = {
+            draft: 'No draft applications',
+            return: 'No returned applications',
+            inProcess: 'No applications in process',
+            complete: 'No completed applications in the last 7 days',
+            waitingApprove: 'No applications waiting for approval',
+            approverComplete: 'No completed applications in the last 7 days'
+        };
+
+        this.container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <h3 class="empty-state-title">${emptyMessages[this.currentTab] || 'No applications found'}</h3>
+                <p class="empty-state-description">There are no applications to display at this time.</p>
+            </div>
+        `;
+    }
+
+    setupEventListeners() {
+        // Summary card click (acts as tab)
+        if (this.summaryContainer) {
+            this.summaryContainer.addEventListener('click', async (e) => {
+                const card = e.target.closest('.summary-card[data-tab]');
+                if (!card || this.isLoading) return;
+
+                const newTab = card.dataset.tab;
+                if (!newTab || newTab === this.currentTab) return;
+
+                this.currentTab = newTab;
+                this.highlightActiveSummaryCard();
+                await this.loadApplicationsByTab(newTab);
+            });
+        }
+    }
+
+    formatDate(dateString) {
+        if (!dateString) return '-';
+        
+        const date = new Date(dateString);
+        return date.toLocaleDateString('th-TH', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+    window.appDashboard = new AppDashboard();
+    window.appDashboard.init();
+    
+    // ทดสอบ reload (จำลอง SignalR)
+    console.log('💡 ทดสอบ reload: เปิด Console แล้วพิมพ์ appDashboard.reloadData()');
+});
+
     </script>
 }

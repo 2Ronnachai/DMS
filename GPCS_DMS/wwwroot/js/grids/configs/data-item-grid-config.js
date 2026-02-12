@@ -28,8 +28,20 @@ const DataItemGridConfig = {
     endpoint: window.APP_CONFIG.baseUrl + 'dxGridDataItems/',
     keyField: 'id',
     exportFileName: 'Data_Item',
+    onRowClick: (e) => {
+        if (e.rowType === 'data') {
+            if(e.data.quotationUrl && e.data.quotationUrl.trim() !== ''){
+                const url = `${window.APP_CONFIG.qcsUrl.view}${e.data.quotationUrl}`;
+                window.open(url, '_blank');
+            }
+        }
+    },
     onRowPrepared: (e) => {
         if (e.rowType === 'data') {
+            if (e.data.quotationUrl && e.data.quotationUrl.trim() !== '') {
+                e.cellElement.css('cursor', 'pointer');
+            }
+            
             if (e.data.quotationExpiryDate) {
                 const expiryDate = new Date(e.data.quotationExpiryDate);
                 const today = new Date();
@@ -88,13 +100,19 @@ const DataItemGridConfig = {
         }),
 
         // Supplier Section
-        GridHelper.createColumn('supplierCode', 'Supplier', {
+        GridHelper.createColumn('supplierName', 'Supplier', {
             width: 300,
             calculateDisplayValue: (rowData) => {
                 return rowData.supplierCode && rowData.supplierName
-                    ? `${rowData.supplierCode} : ${rowData.supplierName}`
+                    ? `${rowData.supplierName} : ${rowData.supplierCode}`
                     : rowData.supplierCode || '-';
             },
+            validationRules: [{ type: 'required' }]
+        }),
+
+        GridHelper.createColumn('supplierCode', 'Supplier Code', {
+            width: 150,
+            visible: false,
             validationRules: [{ type: 'required' }]
         }),
 
@@ -154,6 +172,11 @@ const DataItemGridConfig = {
                 width: 150,
             }
         ),
+
+        GridHelper.createColumn('quotationUrl', 'Quotation URL', {
+            width: 100,
+            alignment: 'center',
+        }),
 
         GridHelper.createNumberColumn('runningNumber', 'Running No.', '#,##0', {
             width: 110,

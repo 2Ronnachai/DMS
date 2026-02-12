@@ -125,7 +125,7 @@ class BaseGrid {
             columnAutoWidth: this.options.columnAutoWidth ?? true,
             showBorders: this.options.showBorders ?? true,
             showRowLines: this.options.showRowLines ?? true,
-            showColumnLines: this.options.showColumnLines,
+            showColumnLines: this.options.showColumnLines ?? true,
             rowAlternationEnabled: this.options.rowAlternationEnabled,
             hoverStateEnabled: this.options.hoverStateEnabled,
             wordWrapEnabled: this.options.wordWrapEnabled,

@@ -65,7 +65,7 @@ const costCenterDataSource = new DevExpress.data.CustomStore({
                 : await Http.get('purchaserCostCenter/lookups/');
             if (response && response.success) {
                 const data = response.data || [];
-                return data.find(item => item.code === key);
+                return data.find(item => item.id === key);
             }
         } catch (error) {
             console.error('Failed to load Cost Center by key:', error);
@@ -160,6 +160,17 @@ const CostCenterManagementGridConfig = {
             width: 200,
             visible: false,
             validationRules: [{ type: 'required' }],
+            setCellValue: async function (newData, value) {
+                newData.organizationUnitId = value;
+                console.log('Selected Cost Center ID:', value);
+
+                const costCenter = await costCenterDataSource.byKey(value);
+                if (costCenter) {
+                    newData.organizationUnitName = costCenter.displayName;
+                }else{
+                    newData.organizationUnitName = null;
+                }
+            }
         }),
         GridHelper.createColumn('organizationUnitName', 'Cost Center',{
             minWidth: 250,
@@ -167,25 +178,6 @@ const CostCenterManagementGridConfig = {
             formItem: { visible: false },
         }),
     ],
-    onEditorPreparing: (e) => {
-        if(e.dataField === 'organizationUnitId' && e.parentType === 'dataRow'){
-            e.editorOptions.onValueChanged = (args) => {
-                if(args.value){
-                    const grid = e.component;
-                    const rowIndex = e.row.rowIndex;
-
-                    grid.cellValue(rowIndex, 'organizationUnitId', args.value);
-                    costCenterDataSource.byKey(args.value).then(costCenter => {
-                        if(costCenter){
-                            grid.cellValue(rowIndex, 'organizationUnitName', costCenter.displayName);
-                        }   
-                    }).catch(error => {
-                        console.error('Failed to fetch Cost Center details:', error);
-                    });
-                }
-            }
-        }
-    },
     enableConfirmDelete: true,
     deleteConfirmOptions: {
         title: 'Confirm Delete',

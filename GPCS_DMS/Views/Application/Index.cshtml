@@ -2,25 +2,67 @@
     ViewData["Title"] = "Dashboard";
 }
 @section Styles {
-
+    <link rel="stylesheet" href="~/css/grid.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/application/dashboard.css" asp-append-version="true" />
 }
-<div class="container">
-    <h1 class="display-4 text-center mt-5">Dashboard</h1>
-    <p class="text-center">This is the dashboard page of the application.</p>
-    <div id="create-application-buttons-container"> </div>
-    <div id="application-list-container">
-        <!-- Application list or dashboard content can go here -->
+
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Application Dashboard</h1>
+        <p class="dashboard-subtitle">Manage and track all your applications</p>
+    </div>
+
+    <!-- Summary Cards -->
+    <div id="dashboard-summary-container" class="summary-grid"></div>
+
+    <!-- Filter Panel -->
+    <div class="filter-panel-container">
+        <div class="filter-panel-header">
+            <button type="button" id="filter-toggle-btn" class="filter-toggle-btn">
+                <i class="fas fa-filter"></i>
+                <span>Filters</span>
+                <i class="fas fa-chevron-down filter-toggle-icon"></i>
+            </button>
+        </div>
+        <div id="dashboard-filter-panel" class="filter-panel filter-panel--collapsed">
+            <div class="filter-row">
+                <div class="filter-field">
+                    <label class="filter-label" for="filter-text-search">Keyword</label>
+                    <div id="filter-text-search"></div> @*dxTextBox*@
+                </div>
+                <div class="filter-field">
+                    <label class="filter-label" for="filter-application-type">Application Type</label>
+                    <div id="filter-application-type"></div> @*dxSelectBox*@
+                </div>
+                <div class="filter-field">
+                    <label class="filter-label" for="filter-date-from">From Date</label>
+                    <div id="filter-date-from"></div> @*dxDateBox*@
+                </div>
+                <div class="filter-field">
+                    <label class="filter-label" for="filter-date-to">To Date</label>
+                    <div id="filter-date-to"></div> @*dxDateBox*@
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="button" id="filter-apply-btn" class="filter-btn filter-btn--primary">
+                    <i class="fas fa-check"></i> Apply
+                </button>
+                <button type="button" id="filter-reset-btn" class="filter-btn filter-btn--secondary">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="application-grid-container">
+        <div id="dashboard-application-grid"></div>
     </div>
 </div>
 
 @section Scripts {
-    <script src="~/js/application/app-dashboard.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", async function() {
-            // You can add any page-specific JavaScript here if needed
-            // Using appDashboard to load dashboard data
-            const appDashboard = new AppDashboard();
-            await appDashboard.init();
-        });
-    </script>
+    <partial name="_GridScripts" />
+    <script src="~/js/application/dashboard/dashboard-config.js" asp-append-version="true"></script>
+    <script src="~/js/application/dashboard/dashboard-service.js" asp-append-version="true"></script>
+    <script src="~/js/application/dashboard/dashboard-renderer.js" asp-append-version="true"></script>
+    <script src="~/js/application/dashboard/app-dashboard.js" asp-append-version="true"></script>
 }

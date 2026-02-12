@@ -37,7 +37,7 @@
                 service: "@Configuration["ApiSettings:QCSUrl:Service"]"
             },
             gpcsUrl: "@Configuration["ApiSettings:GPCSUrl"]",
-            host: "@(Context.Request.PathBase)@(Url.Action("Index", "Application"))"
+            host: "@(Context.Request.PathBase)" + "/"
         };
 
         if (!window.APP_CONFIG.baseUrl) {
@@ -131,6 +131,11 @@
                                     <h6 class="dropdown-header">Application</h6>
                                 </li>
                                 <li>
+                                    <a class="dropdown-item" asp-controller="Reports" asp-action="Index">
+                                        📉 Dashboard
+                                    </a>
+                                </li>
+                                <li>
                                     <a class="dropdown-item" asp-controller="Reports" asp-action="Application">
                                         📄 Applications
                                     </a>
@@ -206,9 +211,6 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li>
                                     <a class="dropdown-item" asp-controller="Settings" asp-action="Supplier">
                                         🏢 Supplier
                                     </a>
@@ -216,6 +218,17 @@
                                 <li>
                                     <a class="dropdown-item" asp-controller="Settings" asp-action="SupplierPurchaser">
                                         🔗 Supplier-Purchaser
+                                    </a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <h6 class="dropdown-header">Task</h6>
+                                </li>
+                                 <li>
+                                    <a class="dropdown-item" asp-controller="Settings" asp-action="TaskManagement">
+                                        ⏳ Task Management
                                     </a>
                                 </li>
                             </ul>
@@ -277,8 +290,6 @@
     <footer class="footer">
         <div class="container">
             <span>&copy; 2025 Data Maintenance System</span>
-            @* <span class="mx-2">•</span>
-            <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a> *@
         </div>
     </footer>
     <script src="~/lib/font-awesome/js/all.min.js"></script>
