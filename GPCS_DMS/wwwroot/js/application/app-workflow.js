@@ -4,7 +4,7 @@ class AppWorkflow {
         this.data = applicationData;
         this.container = document.getElementById('workflowSection');
 
-        this.currentUserNid = 'p3695';
+        this.currentUserNid = applicationData?.currentUser || null;
     }
 
     render() {
@@ -20,8 +20,7 @@ class AppWorkflow {
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
                             <span class="header-application-type">
-                                <i class="fas fa-route me-2 text-muted"></i>
-                                    Workflow Progress
+                                Workflow Progress
                             </span>
                         </div>
                         <div class="workflow-summary text-end">
@@ -48,18 +47,20 @@ class AppWorkflow {
             : 0;
 
         let progressClass = 'bg-secondary';
+        let message = `Step ${currentStepSequence} / ${totalSteps} (${applicationStatus})`;
 
         if (['Rejected', 'Cancelled'].includes(applicationStatus)) {
             progressClass = 'bg-danger';
         }
-        else if (progressPercent === 100) {
+        else if (progressPercent === 100 && applicationStatus === 'Completed') {
             progressClass = 'bg-success';
+            message = 'Completed';
         }
 
         return `
             <div class="d-flex align-items-center gap-3">
-                <div class="text-muted small">
-                    Step ${currentStepSequence} / ${totalSteps}
+                <div class="text-muted">
+                    ${message}
                 </div>
                 <div style="width:140px;">
                     <div class="progress" style="height:6px;">
@@ -104,7 +105,7 @@ class AppWorkflow {
 
         return `
             <div class="${stepClass}">
-                
+
                 <div class="timeline">
                     <span class="dot ${dotClass}"></span>
                     ${!step.isFinalStep ? '<span class="line"></span>' : ''}
@@ -113,8 +114,8 @@ class AppWorkflow {
                 <div class="step-content">
                     <div class="step-header">
                         <span class="step-name">${step.stepName}</span>
-                        ${isCurrent ? '<span class="badge bg-primary ms-2">Current</span>' : ''}
-                        ${step.isFinalStep ? '<span class="badge bg-light text-muted ms-2">Final</span>' : ''}
+                        ${isCurrent ? '<span class="badge bg-current ms-2">Current</span>' : ''}
+                        ${step.isFinalStep ? '<span class="badge bg-final ms-2">Final</span>' : ''}
                     </div>
 
                     <div class="assignee-list">
@@ -140,44 +141,47 @@ class AppWorkflow {
         const action = isActioned
             ? this._getActionDisplay(a.actionTaken)
             : {
-                text: 'Waiting',
-                icon: 'fa-clock',
+                text: 'Pending',
+                icon: 'fa-hourglass-half',
                 class: 'text-muted'
             };
 
         const actionTime = a.actionedAt
-            ? `<small class="text-muted ms-2">
-                ${new Date(a.actionedAt).toLocaleString()}
+            ? `<small class="text-muted">
+                ${this._formatDate(a.actionedAt)}
             </small>`
             : '';
 
         const hasComment = !!a.comments;
-        const commentId = `comment-${a.assignmentId}-${a.nId}`;
-
+        const commentId = `comment-${a.assignmentId}-${a.nId}-${Date.now()}`;
 
         return `
             <div class="assignee-item ${isMe ? 'me' : ''} ${isActioned ? 'actioned' : ''}">
-                <i class="fas ${action.icon} ${action.class} me-2"></i>
+                <i class="fas ${action.icon} ${action.class}"></i>
 
                 <span class="assignee-name">
                     ${a.employeeName}
+                    ${isMe ? '<i class="fas fa-user-circle text-primary ms-1" title="You"></i>' : ''}
                 </span>
 
-                <span class="assignee-action ms-2 ${action.class}">
+                <span class="assignee-action ${action.class}">
                     ${action.text}
                 </span>
 
                 ${actionTime}
+
                 ${hasComment ? `
-                    <i class="far fa-comment-dots text-muted ms-2 comment-toggle"
-                       title="View comment"
-                       data-target="${commentId}">
+                    <i class="far fa-comment-dots comment-toggle"
+                    title="View comment"
+                    data-target="${commentId}">
                     </i>
                 ` : ''}
             </div>
             ${hasComment ? `
                 <div id="${commentId}" class="assignee-comment d-none">
-                    “${a.comments}”
+                    <i class="fas fa-quote-left me-2 opacity-50"></i>
+                    ${a.comments}
+                    <i class="fas fa-quote-right ms-2 opacity-50"></i>
                 </div>
             ` : ''}
         `;

@@ -12,6 +12,7 @@ class AppDashboard {
         this.summaryContainer = document.getElementById('dashboard-summary-container');
         this.filterPanel = document.getElementById('dashboard-filter-panel');
         this.filterToggleBtn = document.getElementById('filter-toggle-btn');
+        this.headerActions = document.getElementById('dashboard-header-actions');
 
         // Services
         this.service = new DashboardService(this);
@@ -37,6 +38,99 @@ class AppDashboard {
         // Prevent rapid card switching (avoid concurrent loads)
         this._isSwitchingCard = false;
         this._pendingCardKey = null;
+
+        // Header create button state
+        this._headerCreate = {
+            container: null,
+            dropdown: null,
+            isBound: false,
+            onDocClick: null,
+        };
+    }
+
+    normalizeRole(role) {
+        return (role || '').toString().trim().toLowerCase();
+    }
+
+    canCreateNew() {
+        const buttonConfig = this.config?.TOOLBAR?.CREATE_BUTTON;
+        if (!buttonConfig?.enabled) return false;
+
+        const normalizedRole = this.normalizeRole(this.role);
+        const exclude = Array.isArray(buttonConfig.excludeRoles) ? buttonConfig.excludeRoles : [];
+        return !exclude.map(r => this.normalizeRole(r)).includes(normalizedRole);
+    }
+
+    clearHeaderCreateButton() {
+        if (!this.headerActions) return;
+        this.headerActions.innerHTML = '';
+        this._headerCreate.container = null;
+        this._headerCreate.dropdown = null;
+
+        if (this._headerCreate.isBound && this._headerCreate.onDocClick) {
+            document.removeEventListener('click', this._headerCreate.onDocClick, true);
+            this._headerCreate.isBound = false;
+            this._headerCreate.onDocClick = null;
+        }
+    }
+
+    renderHeaderCreateButton() {
+        if (!this.headerActions) return;
+
+        // Always reset to avoid duplicates after reload
+        this.clearHeaderCreateButton();
+
+        if (!this.canCreateNew()) return;
+        if (!this.applicationTypes || !this.applicationTypes.length) return;
+
+        const buttonConfig = this.config.TOOLBAR.CREATE_BUTTON;
+
+        const container = document.createElement('div');
+        container.className = 'toolbar-create-container';
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'toolbar-btn toolbar-btn--primary';
+        button.innerHTML = `<i class="${buttonConfig.icon}"></i> ${buttonConfig.label} <i class="${buttonConfig.dropdownIcon}"></i>`;
+
+        const dropdown = document.createElement('div');
+        dropdown.className = 'toolbar-dropdown';
+        dropdown.style.display = 'none';
+
+        this.applicationTypes.forEach(type => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'toolbar-dropdown-item';
+            item.innerHTML = `<i class="${buttonConfig.itemIcon}"></i> ${type.displayName}`;
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.style.display = 'none';
+                this.handleCreateNew(type);
+            });
+            dropdown.appendChild(item);
+        });
+
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.style.display = dropdown.style.display === 'none' ? '' : 'none';
+        });
+
+        container.appendChild(button);
+        container.appendChild(dropdown);
+        this.headerActions.appendChild(container);
+
+        // Close on outside click (capture phase so it runs early)
+        const onDocClick = (e) => {
+            if (!container.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        };
+        document.addEventListener('click', onDocClick, true);
+
+        this._headerCreate.container = container;
+        this._headerCreate.dropdown = dropdown;
+        this._headerCreate.isBound = true;
+        this._headerCreate.onDocClick = onDocClick;
     }
 
     setSummaryCardsEnabled(enabled) {
@@ -103,6 +197,8 @@ class AppDashboard {
             this.summaryContainer.style.display = 'none';
         }
 
+        this.clearHeaderCreateButton();
+
         document.querySelector('.filter-panel-container')?.setAttribute('style', 'display:none');
 
         if (this.containerWrapper) {
@@ -114,6 +210,8 @@ class AppDashboard {
         if (this.summaryContainer) {
             this.summaryContainer.style.display = 'none';
         }
+
+        this.clearHeaderCreateButton();
 
         const filterPanelContainer = document.querySelector('.filter-panel-container');
         if (filterPanelContainer) filterPanelContainer.style.display = 'none';
@@ -192,6 +290,7 @@ class AppDashboard {
 
             // Setup UI
             this.renderSummaryCards();
+            this.renderHeaderCreateButton();
             this.initFilterPanel();
             this.createGrid();
 
@@ -212,6 +311,7 @@ class AppDashboard {
         try {
             await this.loadRoleWithSummary();
             this.renderer.updateSummaryValues(this.summaryContainer, this.summary);
+            this.renderHeaderCreateButton();
             await this.loadApplications(this.currentActive);
         } catch (error) {
             this.notify.error('Failed to reload dashboard data: ' + error.message);
@@ -428,7 +528,7 @@ class AppDashboard {
             enableFilterPanel: true,
             enableHeaderFilter: true,
             showBorders: true,
-            hoverStateEnabled: false,
+            hoverStateEnabled: true,
             enableStateStorage: false,
             rowAlternationEnabled: false,
 
@@ -472,7 +572,8 @@ class AppDashboard {
         const buttonConfig = this.config.TOOLBAR.CREATE_BUTTON;
 
         if (!buttonConfig.enabled) return;
-        if (buttonConfig.excludeRoles.includes(this.role)) return;
+        const normalizedRole = this.normalizeRole(this.role);
+        if ((buttonConfig.excludeRoles || []).map(r => this.normalizeRole(r)).includes(normalizedRole)) return;
 
         toolbar.items.unshift({
             location: 'before',
@@ -525,7 +626,7 @@ class AppDashboard {
     handleOnRowClick(e) {
         if (e.rowType === 'data') {
             var url = `${window.APP_CONFIG?.host}Application/SetApplicationType?applicationType=${e.data.applicationType}&id=${e.data.id}`;
-            window.open(url, '_blank');
+            window.location.href = url;
         }
     }
 
@@ -545,8 +646,6 @@ class AppDashboard {
     }
 
     updateGrid() {
-        console.log('Updating grid with applications:', this.applications);
-
         const items = this.applications || [];
 
         // Ensure grid exists once; do not destroy its DOM for empty state

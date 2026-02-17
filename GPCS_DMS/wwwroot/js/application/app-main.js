@@ -117,9 +117,6 @@ class AppMain {
         // Load application data if applicationId is provided
         promises.push(this._loadApplicationData());
 
-        // // Load Master data (suppliers ,categories, etc.)
-        // promises.push(this._loadMasterData());
-
         await Promise.all(promises);
     }
 
@@ -129,7 +126,6 @@ class AppMain {
             if (response && response.success) {
                 this.permissions = response.data;
                 this._determineModeAndActions();
-                console.log('Permissions loaded:', this.permissions);
             } else {
                 throw new Error('Failed to load permissions from server.');
             }
@@ -165,6 +161,7 @@ class AppMain {
                 const response = await this.http.get(this.endpoints.loadHeaderData(this.applicationType) + `/${this.applicationId}`);
                 if (response && response.success) {
                     this.applicationData = response.data ? response.data : response;
+                    console.log('Loaded application data:', this.applicationData);
                 } else {
                     throw new Error('Failed to load application data from server.');
                 }

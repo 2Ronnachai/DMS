@@ -1,0 +1,27 @@
+@{
+    ViewData["Title"] = "Application Report";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/grid.css" asp-append-version="true" />
+}
+
+<div class="container-fluid">
+    <div class="jp-minimal-header">
+        <h2>Application Report</h2>
+        <p>View and manage application reports using the grid below.</p>
+    </div>
+    <div class="grid-wrapper">
+        <div id="gridApplicationReport"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_GridScripts" />
+    <script src="~/js/grids/reports/application-report-config.js"></script>
+    
+    <script>
+        $(document).ready(function () {
+            const grid = GridFactory.createGrid(ApplicationReportGridConfig);
+        });
+    </script>
+}

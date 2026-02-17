@@ -54,8 +54,6 @@ class AppGrid {
             ...config
         };
 
-        console.log('Initializing grid with config:', baseConfig);
-
         this.gridInstance = $(this.container)
             .dxDataGrid(baseConfig)
             .dxDataGrid('instance');

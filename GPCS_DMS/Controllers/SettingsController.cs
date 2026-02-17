@@ -42,5 +42,10 @@ namespace GPCS_DMS.Controllers
         {
             return View();
         }
+
+        public IActionResult TaskManagement()
+        {
+            return View();
+        }
     }
 }

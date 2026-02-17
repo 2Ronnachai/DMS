@@ -49,37 +49,37 @@ class GridToolbarBuilder{
 
     _getRefreshButton() {
         return {
-            location: 'after',
-            template: () => {
-                return $('<button/>')
-                    .addClass('dialog-btn dialog-btn-cancel')
-                    .html('<i class="fas fa-sync-alt"></i> Refresh')
-                    .on('click', (e) => {
-                        e.preventDefault();
-                        $(e.currentTarget).blur();
-                        if (window.appGridInstance) {
-                            window.appGridInstance.refresh();
-                        }
-                    });
-            }
+            // location: 'after',
+            // template: () => {
+            //     return $('<button/>')
+            //         .addClass('dialog-btn dialog-btn-cancel')
+            //         .html('<i class="fas fa-sync-alt"></i> Refresh')
+            //         .on('click', (e) => {
+            //             e.preventDefault();
+            //             $(e.currentTarget).blur();
+            //             if (window.appGridInstance) {
+            //                 window.appGridInstance.refresh();
+            //             }
+            //         });
+            // }
         };
     }
 
     _getExportButton() {
         return {
-            location: 'after',
-            template: () => {
-                return $('<button/>')
-                    .addClass('dialog-btn dialog-btn-cancel')
-                    .html('<i class="fas fa-file-excel"></i> Export Excel')
-                    .on('click', (e) => {
-                        e.preventDefault();
-                        $(e.currentTarget).blur();
+            // location: 'after',
+            // template: () => {
+            //     return $('<button/>')
+            //         .addClass('dialog-btn dialog-btn-cancel')
+            //         .html('<i class="fas fa-file-excel"></i> Export Excel')
+            //         .on('click', (e) => {
+            //             e.preventDefault();
+            //             $(e.currentTarget).blur();
                         
-                        // const exportHandler = new ExportHandler(this.appMain);
-                        // exportHandler.exportToExcel();
-                    });
-            }
+            //             // const exportHandler = new ExportHandler(this.appMain);
+            //             // exportHandler.exportToExcel();
+            //         });
+            // }
         };
     }
 
