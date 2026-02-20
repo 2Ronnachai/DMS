@@ -61,4 +61,15 @@
     <script src="~/js/application/dashboard/dashboard-service.js" asp-append-version="true"></script>
     <script src="~/js/application/dashboard/dashboard-renderer.js" asp-append-version="true"></script>
     <script src="~/js/application/dashboard/app-dashboard.js" asp-append-version="true"></script> *@
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            const response = await Http.get('sync/sync-data');
+            if(response.ok) {
+                const result = await response.json();
+                console.log('Sync result:', result);
+            } else {
+                console.error('Failed to sync data:', response.statusText);
+            }
+        });
+    </script>
 }

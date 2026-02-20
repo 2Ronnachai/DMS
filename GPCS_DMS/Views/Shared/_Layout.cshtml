@@ -64,11 +64,11 @@
                 <!-- Nav Items -->
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav flex-grow-1">
-                        @* <li class="nav-item">
+                        <li class="nav-item">
                             <a class="nav-link" asp-area="" asp-controller="Application" asp-action="Index">
                                 Home
                             </a>
-                        </li> *@
+                        </li>
                         <!-- Data Dropdown -->
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
@@ -165,103 +165,78 @@
                         </li>
 
                         <!-- Settings Dropdown -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                                Settings
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <h6 class="dropdown-header">User Management</h6>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Settings" asp-action="Account">
-                                        👤 Account
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Settings" asp-action="Purchaser">
-                                        🛒 Purchaser
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Settings" asp-action="CostCenter">
-                                        💼 Cost Center
-                                    </a>
-                                </li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li>
-                                    <h6 class="dropdown-header">System Config</h6>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Settings" asp-action="Category">
-                                        📑 Category
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Settings" asp-action="MaterialType">
-                                        🔖 Material Type
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Settings" asp-action="Unit">
-                                        📏 Unit
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Settings" asp-action="Supplier">
-                                        🏢 Supplier
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Settings" asp-action="SupplierPurchaser">
-                                        🔗 Supplier-Purchaser
-                                    </a>
-                                </li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li>
-                                    <h6 class="dropdown-header">Task</h6>
-                                </li>
-                                 <li>
-                                    <a class="dropdown-item" asp-controller="Settings" asp-action="TaskManagement">
-                                        ⏳ Task Management
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-
-                        @* <!-- Audit Log -->
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Audit" asp-action="Index">
-                                Audit Log
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <!-- Dropdown Menu for Data Management : GPCS Data , Material , Item , Inventory -->
-                            <!-- And DataMaterial , DataItem For Monitoring -->
-                            <!-- Supplier for Purchaser -->
-                            <a class="nav-link" asp-area="" asp-controller="Data" asp-action="Index">
-                                Data
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <!-- Reports for Application : Application , ApplicationHistory, FileAttachment -->
-                            <!-- DataItem : StockControlReport , QuotationReport -->
-                            <a class="nav-link" asp-area="" asp-controller="Reports" asp-action="Index">
-                                Reports
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <!-- Setting for Management : Account , Purchaser , PurchaserCostCenter   -->
-                            <!-- Category , MaterialType , Unit, ,Supplier , SupplierPurchaser  -->
-                            <a class="nav-link" asp-area="" asp-controller="Settings" asp-action="Index">
-                                Settings
-                            </a>
-                        </li> *@
+                        @if (User.FindFirst("UserType")?.Value == "Developer" || 
+                            User.FindFirst("UserType")?.Value == "Administrator")
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                                   aria-expanded="false">
+                                    Settings
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <h6 class="dropdown-header">User Management</h6>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Settings" asp-action="Account">
+                                            👤 Account
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Settings" asp-action="Purchaser">
+                                            🛒 Purchaser
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Settings" asp-action="CostCenter">
+                                            💼 Cost Center
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <h6 class="dropdown-header">System Config</h6>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Settings" asp-action="Category">
+                                            📑 Category
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Settings" asp-action="MaterialType">
+                                            🔖 Material Type
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Settings" asp-action="Unit">
+                                            📏 Unit
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Settings" asp-action="Supplier">
+                                            🏢 Supplier
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Settings" asp-action="SupplierPurchaser">
+                                            🔗 Supplier-Purchaser
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <h6 class="dropdown-header">Task</h6>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Settings" asp-action="TaskManagement">
+                                            ⏳ Task Management
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
                         <!-- Audit Log for System Audit Trail -->
                     </ul>
 
@@ -269,7 +244,7 @@
                     <div class="navbar-text">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
-                            <span>@User.Identity.Name</span>
+                            <span>@User.FindFirst("FullName")?.Value</span>
                         }
                         else
                         {

@@ -1,10 +1,13 @@
-﻿using GPCS_DMS.Models;
+﻿using System.Diagnostics;
+using GPCS_DMS.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GPCS_DMS.Controllers
 {
-    public class ApplicationController : Controller
+    public class ApplicationController(ILogger<ApplicationController> logger) : Controller
     {
+        private readonly ILogger<ApplicationController> _logger = logger;
+
         public IActionResult Index()
         {
             return View();
@@ -48,18 +51,31 @@ namespace GPCS_DMS.Controllers
             return RedirectToAction("Requisition");
         }
 
-        public IActionResult Requisition()
-        {
-            var applicationType = HttpContext.Session.GetString("ApplicationType");
-            var applicationId = HttpContext.Session.GetInt32("ApplicationId");
+        // public IActionResult Requisition()
+        // {
+        //     var applicationType = HttpContext.Session.GetString("ApplicationType");
+        //     var applicationId = HttpContext.Session.GetInt32("ApplicationId");
 
-            if(string.IsNullOrEmpty(applicationType))
+        //     if(string.IsNullOrEmpty(applicationType))
+        //     {
+        //         return BadRequest("Application type is not set.");
+        //     }
+
+        //     ViewBag.ApplicationType = applicationType;
+        //     ViewBag.ApplicationId = applicationId;
+
+        //     return View();
+        // }
+
+        public IActionResult Requisition(string applicationType, int? id)
+        {
+            if (string.IsNullOrEmpty(applicationType))
             {
                 return BadRequest("Application type is not set.");
             }
 
             ViewBag.ApplicationType = applicationType;
-            ViewBag.ApplicationId = applicationId;
+            ViewBag.ApplicationId = id;
 
             return View();
         }

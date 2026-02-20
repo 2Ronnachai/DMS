@@ -39,7 +39,7 @@ const DataItemGridConfig = {
     onRowPrepared: (e) => {
         if (e.rowType === 'data') {
             if (e.data.quotationUrl && e.data.quotationUrl.trim() !== '') {
-                e.cellElement.css('cursor', 'pointer');
+                e.rowElement.css('cursor', 'pointer');
             }
             
             if (e.data.quotationExpiryDate) {

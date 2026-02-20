@@ -619,13 +619,13 @@ class AppDashboard {
 
     handleCreateNew(applicationType) {
         // New tab with applicationType
-        const url = `${window.APP_CONFIG?.host}Application/SetApplicationType?applicationType=${applicationType.name}`;
+        const url = `${window.APP_CONFIG?.host}Application/Requisition?applicationType=${applicationType.name}`;
         window.open(url, '_blank');
     }
 
     handleOnRowClick(e) {
         if (e.rowType === 'data') {
-            var url = `${window.APP_CONFIG?.host}Application/SetApplicationType?applicationType=${e.data.applicationType}&id=${e.data.id}`;
+            var url = `${window.APP_CONFIG?.host}Application/Requisition?applicationType=${e.data.applicationType}&id=${e.data.id}`;
             window.location.href = url;
         }
     }

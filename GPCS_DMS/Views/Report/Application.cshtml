@@ -3,6 +3,247 @@
 }
 @section Styles {
     <link rel="stylesheet" href="~/css/grid.css" asp-append-version="true" />
+    <style>
+        /* keep popup layout predictable */
+        #workflowPopup,
+        #workflowPopup * {
+            box-sizing: border-box;
+        }
+
+        .wf-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.4);
+            backdrop-filter: blur(3px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 16px;
+        }
+
+        .wf-card {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: #fff;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 640px;
+            max-height: calc(100vh - 32px);
+            box-shadow: 0 8px 32px rgba(15,23,42,0.12), 0 1px 2px rgba(15,23,42,0.06);
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(10px) scale(0.98);
+            transition: opacity 0.22s ease, transform 0.22s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .wf-card--visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* header */
+        .wf-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px 16px;
+        }
+
+        .wf-card-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .wf-eyebrow {
+            font-size: 16px;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .wf-status-badge {
+            font-size: 14px;
+            font-weight: 500;
+            padding: 3px 9px;
+            border-radius: 99px;
+        }
+
+        .wf-badge--success { background:#f0fdf4; color:#16a34a; }
+        .wf-badge--danger  { background:#fef2f2; color:#dc2626; }
+        .wf-badge--info    { background:#eff6ff; color:#2563eb; }
+        .wf-badge--neutral { background:#f8fafc; color:#475569; }
+
+        .wf-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .wf-close:hover { background:#f1f5f9; color:#334155; }
+
+        /* progress bar */
+        .wf-progress-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 24px 20px;
+        }
+
+        .wf-progress-bar-track {
+            flex: 1;
+            height: 5px;
+            background: #f1f5f9;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .wf-progress-bar-fill {
+            height: 100%;
+            background: #3d84f8;
+            border-radius: 99px;
+            transition: width 0.5s ease;
+        }
+
+        .wf-progress-text {
+            font-size: 12px;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+
+        /* stepper wrap */
+        .wf-stepper-wrap {
+            padding: 4px 24px 32px;
+            border-top: 1px solid #f1f5f9;
+            overflow-x: auto;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* ── Stepper container ── */
+        .wf-stepper {
+            display: flex;
+            align-items: flex-start;
+            margin-top: 20px;
+            min-width: max-content;
+            padding-bottom: 8px;
+        }
+
+        .wf-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative; 
+            min-width: 120px;
+            padding: 0 6px;
+        }
+
+        .wf-col:not(.wf-col--last)::after {
+            content: '';
+            position: absolute;
+            top: 18px;
+            left: calc(50% + 18px);
+            right: auto;
+            width: calc(100% - 36px);
+            height: 2px;
+            background: #e2e8f0;
+        }
+
+        .wf-col--done:not(.wf-col--last)::after {
+            background: #16a34a;
+        }
+
+        /* ── Dot ── */
+        .wf-dot {
+            position: relative; 
+            z-index: 1;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            color: #94a3b8;
+            transition: all 0.2s ease;
+        }
+
+        .wf-dot--completed {
+            background: #16a34a;
+            border-color: #16a34a;
+            color: #fff;
+        }
+
+        .wf-dot--current {
+            background: #fff;
+            border-color: #3b82f6;
+            color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+        }
+
+        .wf-dot--rejected {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #ef4444;
+        }
+
+        .wf-num {
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .wf-icon {
+            width: 15px;
+            height: 15px;
+        }
+
+        /* labels */
+        .wf-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #1e293b;
+            margin-top: 10px;
+            text-align: center;
+            line-height: 1.4;
+            padding: 0 4px;
+            max-width: 140px;
+            word-break: break-word;
+        }
+
+        .wf-sub {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 3px;
+            text-align: center;
+        }
+
+        .wf-sub--completed { color: #16a34a; }
+        .wf-sub--current   { color: #3b82f6; font-weight: 500; }
+        .wf-sub--rejected  { color: #ef4444; }
+
+        /* small screens: tighten paddings and allow comfortable scrolling */
+        @@media (max-width: 640px) {
+            .wf-card-header { padding: 16px 16px 12px; }
+            .wf-progress-row { padding: 0 16px 16px; }
+            .wf-stepper-wrap { padding: 4px 16px 20px; }
+            .wf-col { min-width: 108px; }
+            .wf-label { max-width: 120px; }
+        }
+    </style>
 }
 
 <div class="container-fluid">

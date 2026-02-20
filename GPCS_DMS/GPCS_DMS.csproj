@@ -9,4 +9,10 @@
     <PackageReference Include="DevExtreme.AspNet.Core" Version="25.1.7" />
     <PackageReference Include="DevExtreme.AspNet.Data" Version="5.1.0" />
   </ItemGroup>
+
+	<ItemGroup>
+		<Content Update="web.config">
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</Content>
+	</ItemGroup>
 </Project>

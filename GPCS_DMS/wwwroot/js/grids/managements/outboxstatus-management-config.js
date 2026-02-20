@@ -59,7 +59,7 @@ const OutBoxEventsManagementGridConfig = {
         }),
 
         GridHelper.createColumn('payload', 'Payload', {
-            width: 300,
+            maxWidth: 400,
             allowEditing: false,
             fixed: false,
         }),
@@ -71,19 +71,16 @@ const OutBoxEventsManagementGridConfig = {
         }),
 
         GridHelper.createNumberColumn('retryCount', 'Retry Count', '#,##0', {
-            width: 120,
             allowEditing: false,
             fixed: false,
         }),
 
         GridHelper.createNumberColumn('maxRetryCount', 'Max Retry Count', '#,##0', {
-            width: 150,
             allowEditing: false,
             fixed: false,
         }),
 
         GridHelper.createColumn('errorMessage', 'Error Message', {
-            width: 300,
             allowEditing: false,
             fixed: false,
         }),
