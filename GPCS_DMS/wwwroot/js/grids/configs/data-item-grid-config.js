@@ -102,14 +102,13 @@ const DataItemGridConfig = {
         // Supplier Section
         GridHelper.createColumn('supplierName', 'Supplier', {
             width: 300,
-            calculateDisplayValue: (rowData) => {
-                return rowData.supplierCode && rowData.supplierName
-                    ? `${rowData.supplierName} : ${rowData.supplierCode}`
-                    : rowData.supplierCode || '-';
+            cellTemplate: function (container, options) {
+                const displayText = (options.data.supplierName || '') + ' : ' + options.data.supplierCode;
+                $(container).text(displayText);
             },
             validationRules: [{ type: 'required' }]
         }),
-
+        
         GridHelper.createColumn('supplierCode', 'Supplier Code', {
             width: 150,
             visible: false,

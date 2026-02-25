@@ -12,6 +12,19 @@ class AppCore {
     }
 
     static Http = class {
+        static _abortControllers = new Map();
+
+        static createAbortController(key) {
+            const existing = this._abortControllers.get(key);
+            if (existing) {
+                existing.abort();
+            }
+
+            const controller = new AbortController();
+            this._abortControllers.set(key, controller);
+            return controller;
+        }
+
         static async _request(url, options = {}) {
             const core = AppCore.instance;
             const fullUrl = url.startsWith('http') ? url : core.config.baseURL + url;
@@ -37,6 +50,10 @@ class AppCore {
 
                 return await response.text();
             } catch (error) {
+                if (error.name === 'AbortError') {
+                    return;
+                }
+
                 console.error('Fetch error:', error);
                 throw error;
             }
@@ -90,32 +107,37 @@ class AppCore {
         }
 
         // Public HTTP Methods
-        static async get(url) {
-            return this.handleApiResponse(this._request(url, { method: 'GET' }));
+        static async get(url, options = {}) {
+            return this.handleApiResponse(
+                this._request(url, { method: 'GET', ...options })
+            );
         }
 
-        static async post(url, data) {
+        static async post(url, data, options = {}) {
             return this.handleApiResponse(this._request(url, {
                 method: 'POST',
-                body: JSON.stringify(data)
+                body: JSON.stringify(data),
+                ...options
             }));
         }
 
-        static async put(url, data) {
+        static async put(url, data, options = {}) {
             return this.handleApiResponse(this._request(url, {
                 method: 'PUT',
-                body: JSON.stringify(data)
+                body: JSON.stringify(data),
+                ...options
             }));
         }
 
-        static async delete(url) {
-            return this.handleApiResponse(this._request(url, { method: 'DELETE' }));
+        static async delete(url, options = {}) {
+            return this.handleApiResponse(this._request(url, { method: 'DELETE', ...options }));
         }
 
-        static async patch(url, data) {
+        static async patch(url, data, options = {}) {
             return this.handleApiResponse(this._request(url, {
                 method: 'PATCH',
-                body: JSON.stringify(data)
+                body: JSON.stringify(data),
+                ...options
             }));
         }
 

@@ -1,0 +1,344 @@
+/* Report Dashboard tweaks - align with existing minimal design tokens */
+
+/* Application dashboard container locks height/overflow for a single-grid layout.
+   Report dashboard has multiple sections, so allow normal page scrolling. */
+.dashboard-container.report-dashboard {
+    height: auto;
+    overflow: visible;
+    display: block;
+}
+
+.report-dashboard .dashboard-section {
+    margin-top: 12px;
+}
+
+.report-dashboard .dashboard-section-header {
+    margin: 6px 0 10px;
+}
+
+.report-dashboard .dashboard-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.report-dashboard .report-filter-field {
+    display: flex;
+    align-items: center;
+}
+
+.report-dashboard .report-filter-label {
+    display: none;
+}
+
+.report-dashboard #report-period,
+.report-dashboard #report-date-range {
+    min-width: 210px;
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    padding: 4px 8px;
+    background: #ffffff;
+}
+
+.report-dashboard .report-chart {
+    height: 300px;
+}
+
+.report-dashboard .report-grid {
+    height: 220px;
+}
+
+.report-dashboard .report-subheader {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 4px 0 10px;
+}
+
+.report-dashboard .report-subheader-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.report-dashboard .report-divider {
+    height: 1px;
+    background: #f0f0f0;
+    margin: 14px 0;
+}
+
+/* Compact KPI strip (reduces card count) */
+.report-dashboard .report-kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.report-dashboard .report-kpi-item {
+    padding: 8px 12px;
+    border-left: 2px solid #e8e8e8;
+}
+
+.report-dashboard .report-kpi-item:first-child {
+    border-left: none;
+    padding-left: 0;
+}
+
+.report-dashboard .report-kpi-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.report-dashboard .report-kpi-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-top: 2px;
+}
+
+.report-dashboard .report-kpi-hint {
+    font-size: 12px;
+    color: #8c8c8c;
+    margin-top: 2px;
+}
+
+@media (max-width: 992px) {
+    .report-dashboard .report-kpi-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .report-dashboard .report-kpi-item {
+        border-left: none;
+        padding-left: 0;
+        border-top: 1px dashed #f0f0f0;
+        padding-top: 10px;
+    }
+    .report-dashboard .report-kpi-item:nth-child(1),
+    .report-dashboard .report-kpi-item:nth-child(2) {
+        border-top: none;
+        padding-top: 0;
+    }
+}
+
+.report-dashboard .report-kpi {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.report-dashboard .report-card-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.report-dashboard .report-card-action {
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.report-dashboard .report-card-action:hover {
+    text-decoration: none;
+}
+
+/* Calendar events */
+.report-dashboard .report-calendar {
+    width: 100%;
+}
+
+.report-dashboard .report-calendar .dx-calendar {
+    height: 100%;
+}
+
+.report-dashboard .report-calendar-events {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+    overflow: auto;
+}
+
+/* Master Data 2x2 layout */
+.report-dashboard .report-master-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.9fr);
+    gap: 16px;
+}
+
+.report-dashboard .report-master-panel--span2 {
+    grid-column: span 2;
+}
+
+.report-dashboard .report-master-panel {
+    min-height: 410px;
+}
+
+.report-dashboard .report-master-panel .report-grid {
+    height: 360px;
+}
+
+.report-dashboard .report-master-panel--calendar {
+    display: flex;
+    flex-direction: column;
+}
+
+.report-dashboard .report-master-panel--calendar .report-calendar {
+    flex: 0 0 290px;
+    min-height: 290px;
+}
+
+.report-dashboard .report-master-panel--calendar .report-calendar-events {
+    flex: 1 1 auto;
+    min-height: 90px;
+}
+
+.report-dashboard .report-master-panel .report-exchange-list {
+    height: 360px;
+    overflow: auto;
+}
+
+@media (max-width: 992px) {
+    .report-dashboard .report-master-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .report-dashboard .report-master-panel--span2 {
+        grid-column: auto;
+    }
+
+    .report-dashboard .report-master-panel {
+        min-height: 0;
+    }
+}
+
+.report-dashboard .report-calendar-events-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+}
+
+.report-dashboard .report-calendar-event {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px dashed #f0f0f0;
+}
+
+.report-dashboard .report-calendar-event:last-child {
+    border-bottom: none;
+}
+
+.report-dashboard .report-calendar-badge {
+    flex-shrink: 0;
+    font-size: 11px;
+    line-height: 1;
+    padding: 4px 6px;
+    border-radius: 2px;
+    border: 1px solid var(--border-color);
+    background: #ffffff;
+    color: var(--text-secondary);
+}
+
+.report-dashboard .report-calendar-badge--holiday {
+    background: #fff1f0;
+    border-color: #ffccc7;
+    color: var(--danger-color);
+}
+
+.report-dashboard .report-calendar-badge--inventory {
+    background: #f6ffed;
+    border-color: #b7eb8f;
+    color: var(--success-color);
+}
+
+.report-dashboard .report-calendar-badge--monthClose {
+    background: #fffbe6;
+    border-color: #ffe58f;
+    color: var(--warning-color);
+}
+
+.report-dashboard .report-calendar-event-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.report-dashboard .report-calendar-event-note {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 2px 0 0 0;
+}
+
+/* Calendar cell marker (dot) */
+/* Calendar cell marker as overlay (do not affect column layout) */
+.report-dashboard .report-cal-cell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.report-dashboard .report-calendar-dot {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    right: 6px;
+    bottom: 6px;
+}
+
+.report-dashboard .report-calendar-dot--holiday { background: var(--danger-color); }
+.report-dashboard .report-calendar-dot--inventory { background: var(--success-color); }
+.report-dashboard .report-calendar-dot--monthClose { background: var(--warning-color); }
+
+/* Exchange rate compact list */
+.report-dashboard .report-exchange-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.report-dashboard .report-ex-rate-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    background: #ffffff;
+}
+
+.report-dashboard .report-ex-rate-code {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.report-dashboard .report-ex-rate-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.report-dashboard .report-ex-rate-delta {
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 2px;
+    text-align: right;
+}
+
+.report-dashboard .report-ex-rate-delta--up { color: var(--success-color); }
+.report-dashboard .report-ex-rate-delta--down { color: var(--danger-color); }
+.report-dashboard .report-ex-rate-delta--flat { color: var(--text-secondary); }

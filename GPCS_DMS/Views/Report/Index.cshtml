@@ -1,15 +1,136 @@
-@* Header (start)| (end) Change dayly , weekly , monthly , yearly (selected default dayly)  OR  range date => can selected*@
+@{
+	ViewData["Title"] = "Dashboard";
+}
 
-@* section 1*@
-@* 4| Card ToTal Application,  Inprocess , Completed , Waiting Effective *@
-@* 2| Column Application Graph (createdAt) | pie (total application status)*@
-@* 4| Grid  1 First Column => Application Type , Other Columns => Purchaser Name => with Count *@
+@section Styles {
+	<link rel="stylesheet" href="~/css/grid.css" asp-append-version="true" />
+	<link rel="stylesheet" href="~/css/application/dashboard.css" asp-append-version="true" />
+	<link rel="stylesheet" href="~/css/report/dashboard.css" asp-append-version="true" />
+}
 
-@* section 2 *@
-@* 4| Card Total DataMaterial , DataItem , DataItem(Quotation Expire) , NeedAction (Before Expire 45 day)  *@
-@* 4| Grid (selected 1 First Columns UserType =>  Category )*@
+<div class="dashboard-container report-dashboard">
+	<!-- Header (Daily/Weekly/Monthly/Yearly or Date Range) -->
+	<div class="dashboard-header">
+		<div class="dashboard-header-row">
+			<div class="dashboard-header-text">
+				<h1 class="dashboard-title">Report Dashboard</h1>
+				<p class="dashboard-subtitle">Overview of applications, data monitoring, and master data</p>
+			</div>
+			<div class="dashboard-header-actions">
+				<div class="report-filter-field">
+					<label class="report-filter-label" for="report-period"></label>
+					<div id="report-period"></div>
+				</div>
+				<div id="report-date-range-wrapper" class="report-filter-field" style="display:none">
+					<label class="report-filter-label" for="report-date-range"></label>
+					<div id="report-date-range"></div>
+				</div>
+				<button type="button" id="report-refresh-btn" class="filter-btn filter-btn--primary">
+					<i class="fas fa-sync"></i> Refresh
+				</button>
+			</div>
+		</div>
+	</div>
 
-@* section 3 Master data *@
-@* 3 Column *@
-@* 2| Card Total Supplier               1| Calendar *@
-@* 2| Recent Application (DataGrid)     1| Exchange Rate*@
+	<!-- Section 1: Applications -->
+	<div class="dashboard-section">
+		<div class="dashboard-section-header">
+			<h2 class="dashboard-section-title">Applications</h2>
+		</div>
+
+		<div class="card" id="report-app-card">
+			<div class="card-body">
+				<div id="report-app-kpi" class="report-kpi-strip"></div>
+
+				<div class="report-divider"></div>
+
+				<div class="row g-3">
+					<div class="col-12 col-lg-8">
+						<div class="report-subheader">Applications (Created At)</div>
+						<div id="report-app-created-chart" class="report-chart"></div>
+					</div>
+					<div class="col-12 col-lg-4">
+						<div class="report-subheader">Application Status</div>
+						<div id="report-app-status-pie" class="report-chart"></div>
+					</div>
+				</div>
+
+				<div class="report-divider"></div>
+
+				<div class="report-subheader">Applications by Type / Purchaser (Count)</div>
+				<div id="report-app-type-purchaser-grid" class="report-grid"></div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Section 2: Data Monitoring -->
+	<div class="dashboard-section">
+		<div class="dashboard-section-header">
+			<h2 class="dashboard-section-title">Data Monitoring</h2>
+		</div>
+
+		<div class="card">
+			<div class="card-body">
+				<div id="report-data-kpi" class="report-kpi-strip"></div>
+
+				<div class="report-divider"></div>
+
+				<div class="report-subheader">Data by UserType / Category</div>
+				<div id="report-data-usertype-category-grid" class="report-grid"></div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Section 3: Master Data -->
+	<div class="dashboard-section">
+		<div class="dashboard-section-header">
+			<h2 class="dashboard-section-title">Master Data</h2>
+		</div>
+
+		<div class="card">
+			<div class="card-body">
+				<div class="report-master-grid">
+					<div class="report-master-panel report-master-panel--span2">
+						<div class="report-subheader">Purchaser / Suppliers</div>
+						<div id="report-purchaser-supplier-grid" class="report-grid"></div>
+					</div>
+
+					<div class="report-master-panel report-master-panel--calendar">
+						<div class="report-subheader">Calendar</div>
+						<div id="report-calendar" class="report-calendar"></div>
+						<div id="report-calendar-events" class="report-calendar-events"></div>
+					</div>
+
+					<div class="report-master-panel report-master-panel--span2">
+						<div class="report-subheader-row">
+							<div class="report-subheader">Recent Applications</div>
+							<a class="filter-btn filter-btn--secondary report-card-action" asp-controller="Report" asp-action="Application">
+								<i class="fas fa-external-link-alt"></i> See all
+							</a>
+						</div>
+						<div id="report-recent-app-grid" class="report-grid"></div>
+					</div>
+
+					<div class="report-master-panel">
+						<div class="report-subheader">Exchange Rate</div>
+						<div id="report-exchange-rate-list" class="report-exchange-list"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+@section Scripts {
+	<script>
+		window.ReportDashboardConfig = {
+			endpoints: {
+				dashboard: 'dashboard',
+				applications: 'dashboard/applications',
+                monitoring: 'dashboard/monitoring',
+                masterData: 'dashboard/master-data',
+			}
+		};
+	</script>
+	<script src="~/js/report/report-dashboard.js" asp-append-version="true"></script>
+}
