@@ -12,6 +12,9 @@ class GridHelper {
                 displayExpr: displayExpr,
                 valueExpr: valueExpr
             },
+            searchEnabled: true,
+            searchExpr: [displayExpr, valueExpr],
+            showClearButton: true,
             ...options
         };
     }

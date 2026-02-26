@@ -7,21 +7,21 @@ class AppHeaderPopup {
         this.selectedQuotation = null;
         this.onSelectCallback = null;
 
-        this.supplierCode  = null;
+        this.supplierCode = null;
         this.supplierDisplayName = null;
 
         this.$infoDiv = null;
     }
 
-    async show(supplierCode,displayName, onSelect) {
+    async show(supplierCode, displayName, onSelect) {
         this.onSelectCallback = onSelect;
         this.selectedQuotation = null;
         this.supplierCode = supplierCode;
         this.supplierDisplayName = displayName;
 
-        if(!this.popupInstance){
+        if (!this.popupInstance) {
             await this._createPopup();
-        } else{
+        } else {
             this._updateInfoSection();
             this.popupInstance.show();
         }
@@ -74,7 +74,7 @@ class AppHeaderPopup {
             flexGrow: 1,
             marginTop: '16px'
         }).appendTo($wrapper);
-        
+
         this._createGrid($gridContainer);
     }
 
@@ -109,8 +109,8 @@ class AppHeaderPopup {
 
     _createGrid($container) {
         this.gridInstance = $container.dxDataGrid({
-            dataSource:{
-                store:{
+            dataSource: {
+                store: {
                     type: 'array',
                     data: [],
                     key: 'id'
@@ -190,7 +190,7 @@ class AppHeaderPopup {
         if (!this.totalCountElement || !this.gridInstance) return;
 
         const dataSource = this.gridInstance.getDataSource();
-        
+
         if (dataSource) {
             dataSource.load().done(() => {
                 const totalCount = dataSource.totalCount();
@@ -297,17 +297,23 @@ class AppHeaderPopup {
     async _loadQuotations() {
         const loadingId = this.appMain.loading.show('Loading quotations...');
         try {
-            const apiUrl = this.supplierCode 
+            const suppliers = await this.appMain.formComponents.getSupplierDataSource();
+            const allowedSupplierCodes = (suppliers || []).map(s => s.code);
+
+            const apiUrl = this.supplierCode
                 ? `${window.APP_CONFIG.qcsUrl.service}Integration/GetRequestByVendorCode?vendorCode=${encodeURIComponent(this.supplierCode)}`
                 : `${window.APP_CONFIG.qcsUrl.service}Integration/GetRequestAll`;
 
             const response = await this.appMain.http.get(apiUrl);
 
-            if(!response.success){
+            if (!response.success) {
                 throw new Error(response.message || 'Unknown error from server.');
             }
 
-            const data = response.data || [];
+            let data = response.data || [];
+            data = data.filter(q =>
+                allowedSupplierCodes.includes(q.vendorCode)
+            );
             this.gridInstance.option('dataSource', {
                 store: {
                     type: 'array',
@@ -319,22 +325,22 @@ class AppHeaderPopup {
             await this.gridInstance.refresh();
 
             this._updateInfoSection();
-            this._updateTotalCount(); 
+            this._updateTotalCount();
 
-             // Show notification
+            // Show notification
             if (data.length === 0) {
-                const message = this.supplierCode 
+                const message = this.supplierCode
                     ? `No quotations found for supplier: ${this.supplierCode}`
                     : 'No quotations available';
                 this.appMain.notification.info(message);
             } else {
-                const message = this.supplierCode 
+                const message = this.supplierCode
                     ? `Found ${data.length} quotation(s) for supplier: ${this.supplierCode}`
                     : `Found ${data.length} quotation(s)`;
                 console.log(message);
             }
 
-        }catch (error) {
+        } catch (error) {
             this.appMain.notification.error('Failed to load quotations: ' + error.message);
             console.error('Load quotations error:', error);
 
@@ -345,8 +351,8 @@ class AppHeaderPopup {
                     key: 'id'
                 }
             });
-            this._updateTotalCount(); 
-        }finally {
+            this._updateTotalCount();
+        } finally {
             this.appMain.loading.hide(loadingId);
         }
     }
@@ -407,12 +413,12 @@ class AppHeaderPopup {
         this.supplierCode = null;
         this.supplierDisplayName = null;
         this.$infoDiv = null;
-        
+
         if (this.gridInstance) {
             this.gridInstance.dispose();
             this.gridInstance = null;
         }
-        
+
         if (this.popupInstance) {
             this.popupInstance.dispose();
             this.popupInstance = null;

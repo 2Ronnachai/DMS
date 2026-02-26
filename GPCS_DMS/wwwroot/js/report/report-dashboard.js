@@ -1,110 +1,15 @@
 (function () {
     'use strict';
 
-    function ensureDx() {
-        if (!window.DevExpress || !DevExpress.ui) {
-            console.error('DevExtreme not found. Ensure dx.all.js is loaded.');
-            return false;
-        }
-        return true;
-    }
-
-    function getConfig() {
-        const cfg = window.ReportDashboardConfig || {};
-        const endpoints = cfg.endpoints || {};
-        return {
-            endpoints: {
-                dashboard: endpoints.dashboard || 'dashboard',
-                applications: endpoints.applications || 'dashboard/applications',
-                monitoring: endpoints.monitoring || 'dashboard/monitoring',
-                masterData: endpoints.masterData || 'dashboard/masterdata',
-            }
-        };
-    }
-
-    function buildUrl(url, query) {
-        const u = new URL(url,window.APP_CONFIG?.baseUrl || window.location.origin);
-        const q = query || {};
-        Object.keys(q).forEach(k => {
-            const v = q[k];
-            if (v === undefined || v === null || v === '') return;
-            u.searchParams.set(k, String(v));
-        });
-        return u.toString();
-    }
-
-    function formatNumber(n) {
-        const x = Number(n) || 0;
-        return x.toLocaleString('en-US');
-    }
-
-    function toDate(value) {
-        if (!value) return null;
-        if (value instanceof Date) return value;
-        const d = new Date(value);
-        return Number.isNaN(d.getTime()) ? null : d;
-    }
-
-    function startOfDay(d) {
-        const x = new Date(d);
-        x.setHours(0, 0, 0, 0);
-        return x;
-    }
-
-    function addDays(d, days) {
-        const x = new Date(d);
-        x.setDate(x.getDate() + days);
-        return x;
-    }
-
-    function pad2(n) {
-        return (n < 10 ? '0' : '') + n;
-    }
-
-    function formatYMD(d) {
-        const x = new Date(d);
-        return `${x.getFullYear()}-${pad2(x.getMonth() + 1)}-${pad2(x.getDate())}`;
-    }
-
-    function monthKey(d) {
-        const x = new Date(d);
-        return `${x.getFullYear()}-${pad2(x.getMonth() + 1)}`;
-    }
-
-    function defaultRangeForPeriod(period) {
-        const now = new Date();
-        if (period === 'daily') return { start: addDays(now, -13), end: now };
-        if (period === 'weekly') return { start: addDays(now, -7 * 11), end: now };
-        if (period === 'monthly') return { start: addDays(now, -30 * 11), end: now };
-        if (period === 'yearly') return { start: addDays(now, -365 * 4), end: now };
-        // range
-        return { start: addDays(now, -13), end: now };
-    }
-
-    function renderKpiStrip(container, items) {
-        if (!container) return;
-        const list = Array.isArray(items) ? items : [];
-        container.innerHTML = list.map(x => `
-            <div class="report-kpi-item">
-                <div class="report-kpi-label">${x.label}</div>
-                <div class="report-kpi-value">${formatNumber(x.value)}</div>
-                ${x.hint ? `<div class="report-kpi-hint">${x.hint}</div>` : ''}
-            </div>
-        `).join('');
-    }
-
-    function asDomElement(el) {
-        if (!el) return null;
-        if (el.nodeType) return el;
-        // jQuery / DevExtreme renderer wrappers
-        if (typeof el.get === 'function') return el.get(0);
-        if (el[0] && el[0].nodeType) return el[0];
-        return null;
+    const Shared = window.ReportDashboardShared;
+    if (!Shared) {
+        console.error('ReportDashboardShared not found. Ensure report-dashboard.shared.js is loaded BEFORE report-dashboard.js');
+        return;
     }
 
     class ReportDashboard {
         constructor() {
-            this.config = getConfig();
+            this.config = Shared.getConfig();
 
             this.periodEl = document.getElementById('report-period');
             this.dateRangeWrapper = document.getElementById('report-date-range-wrapper');
@@ -115,47 +20,49 @@
 
             this.appKpiEl = document.getElementById('report-app-kpi');
             this.dataKpiEl = document.getElementById('report-data-kpi');
-            this.purchaserSupplierGridEl = document.getElementById('report-purchaser-supplier-grid');
+            this.purchaserSupplierDataGridEl = document.getElementById('report-purchaser-supplier-grid');
 
             this.createdChartEl = document.getElementById('report-app-created-chart');
             this.statusPieEl = document.getElementById('report-app-status-pie');
-            this.typePurchaserGridEl = document.getElementById('report-app-type-purchaser-grid');
+            this.typePurchaserPivotGridEl = document.getElementById('report-app-type-purchaser-grid');
 
-            this.userTypeCategoryGridEl = document.getElementById('report-data-usertype-category-grid');
+            this.userTypeCategoryPivotGridEl = document.getElementById('report-data-usertype-category-grid');
 
             this.calendarEl = document.getElementById('report-calendar');
             this.calendarEventsEl = document.getElementById('report-calendar-events');
-            this.recentGridEl = document.getElementById('report-recent-app-grid');
+            this.recentApplicationsGridEl = document.getElementById('report-recent-app-grid');
             this.exchangeListEl = document.getElementById('report-exchange-rate-list');
 
             this.period = 'daily';
-            const range = defaultRangeForPeriod(this.period);
-            this.startDate = startOfDay(range.start);
+            const range = Shared.defaultRangeForPeriod(this.period);
+            this.startDate = Shared.startOfDay(range.start);
             this.endDate = range.end;
 
             this.widgets = {
-                period: null,
-                dateRange: null,
-                createdChart: null,
-                statusPie: null,
-                typePurchaserGrid: null,
-                userTypeCategoryGrid: null,
-                purchaserSupplierGrid: null,
+                periodSelectBox: null,
+                dateRangeBox: null,
+                createdApplicationsChart: null,
+                applicationStatusPieChart: null,
+                typePurchaserPivotGrid: null,
+                userTypeCategoryPivotGrid: null,
+                purchaserSupplierDataGrid: null,
+                purchaserSupplierChart: null,
                 calendar: null,
-                recentGrid: null
+                recentApplicationsDataGrid: null,
+                typePurchaserDrilldownDataGrid: null,
+                typePurchaserDrilldownPopup: null,
+                typeCategoryDrilldownDataGrid: null,
+                typeCategoryDrilldownPopup: null,
+                purchaserSupplierDrilldownDataGrid: null,
+                purchaserSupplierDrilldownPopup: null
             };
 
             this._calendarEventMap = new Map();
             this._calendarEvents = [];
-
-            this._abort = {
-                dashboard: null,
-                applications: null
-            };
         }
 
         async init() {
-            if (!ensureDx()) return;
+            if (!Shared.ensureDx()) return;
             try {
                 this.initFilters();
                 this.initStaticWidgets();
@@ -167,301 +74,11 @@
         }
 
         initFilters() {
-            const items = [
-                { id: 'daily', text: 'Daily' },
-                { id: 'weekly', text: 'Weekly' },
-                { id: 'monthly', text: 'Monthly' },
-                { id: 'yearly', text: 'Yearly' },
-                { id: 'range', text: 'Range' }
-            ];
-
-            this.widgets.period = $(this.periodEl).dxSelectBox({
-                items,
-                valueExpr: 'id',
-                displayExpr: 'text',
-                value: this.period,
-                width: 210,
-                onValueChanged: (e) => {
-                    this.period = e.value || 'daily';
-                    const showRange = this.period === 'range';
-                    if (this.dateRangeWrapper) this.dateRangeWrapper.style.display = showRange ? '' : 'none';
-
-                    if (!showRange) {
-                        const range = defaultRangeForPeriod(this.period);
-                        this.startDate = startOfDay(range.start);
-                        this.endDate = range.end;
-                        if (this.widgets.dateRange) this.widgets.dateRange.option('value', [this.startDate, this.endDate]);
-                    }
-
-                    // Only reload Applications section when filters change
-                    this.refreshApplications();
-                }
-            }).dxSelectBox('instance');
-
-            this.widgets.dateRange = $(this.dateRangeEl).dxDateRangeBox({
-                value: [this.startDate, this.endDate],
-                width: 320,
-                displayFormat: 'dd-MM-yyyy',
-                startDatePlaceholder: 'Start',
-                endDatePlaceholder: 'End',
-                showClearButton: false,
-                labelMode: 'hidden',
-                onValueChanged: (e) => {
-                    if (this.period !== 'range') return;
-                    const v = e.value || [];
-                    const s = toDate(v[0]);
-                    const en = toDate(v[1]);
-                    if (s && en) {
-                        this.startDate = startOfDay(s);
-                        this.endDate = en;
-                        // Only reload Applications section when filters change
-                        this.refreshApplications();
-                    }
-                }
-            }).dxDateRangeBox('instance');
-
-            // initial visibility
-            if (this.dateRangeWrapper) this.dateRangeWrapper.style.display = this.period === 'range' ? '' : 'none';
+            Shared.initFilterWidgets(this);
         }
 
         initStaticWidgets() {
-            const self = this;
-            this.widgets.calendar = $(this.calendarEl).dxCalendar({
-                value: new Date(),
-                firstDayOfWeek: 1,
-                showTodayButton: true,
-                height: '100%',
-                cellTemplate: function (cellData, cellIndex, cellElement) {
-                    // cellData: { date, text, view }
-                    const date = cellData?.date;
-                    const text = cellData?.text;
-                    const key = date ? formatYMD(date) : '';
-                    const events = key ? self._calendarEventMap.get(key) : null;
-
-                    const host = asDomElement(cellElement);
-                    if (!host) return;
-
-                    // Clear cell and render our wrapper to avoid affecting calendar table layout
-                    host.innerHTML = '';
-                    const wrap = document.createElement('div');
-                    wrap.className = 'report-cal-cell';
-                    wrap.textContent = text;
-
-                    if (events && events.length) {
-                        // Prefer holiday > inventory > monthClose
-                        const types = events.map(e => e.type);
-                        const type = types.includes('holiday') ? 'holiday'
-                            : types.includes('inventory') ? 'inventory'
-                                : types.includes('monthClose') ? 'monthClose'
-                                    : types[0];
-
-                        const dot = document.createElement('span');
-                        dot.className = `report-calendar-dot report-calendar-dot--${type}`;
-                        wrap.appendChild(dot);
-                    }
-
-                    host.appendChild(wrap);
-                },
-                onValueChanged: function (e) {
-                    self.renderCalendarEvents(e.value);
-                }
-            }).dxCalendar('instance');
-
-            this.widgets.createdChart = $(this.createdChartEl).dxChart({
-                dataSource: [],
-                palette: 'Soft',
-                commonSeriesSettings: {
-                    argumentField: 'bucket',
-                    type: 'line',
-                    point: { visible: false }
-                },
-                series: [{ valueField: 'count', name: 'Applications' }],
-                tooltip: { enabled: true },
-                legend: { visible: false },
-                argumentAxis: {
-                    label: { overlappingBehavior: 'rotate', rotationAngle: 45 }
-                },
-                valueAxis: { allowDecimals: false }
-            }).dxChart('instance');
-
-            this.widgets.statusPie = $(this.statusPieEl).dxPieChart({
-                dataSource: [],
-                palette: 'Soft',
-                series: [{ argumentField: 'status', valueField: 'count', label: { visible: true, connector: { visible: true } } }],
-                legend: { horizontalAlignment: 'center', verticalAlignment: 'bottom' },
-                tooltip: { enabled: true }
-            }).dxPieChart('instance');
-
-            this.widgets.typePurchaserGrid = $(this.typePurchaserGridEl).dxPivotGrid({
-                dataSource: {
-                    fields:[
-                        {
-                            caption: 'Department',
-                            width: 200,
-                            dataField: 'department',
-                            area: 'row',
-                            headerFilter: {
-                                search: {
-                                enabled: true,
-                                },
-                            },
-                        },
-                        {
-                            caption: 'Application Type',
-                            width: 200,
-                            dataField: 'applicationType',
-                            area: 'row',
-                            headerFilter: {
-                                search: {
-                                enabled: true,
-                                },
-                            },
-                        },
-                        {
-                            caption: 'Purchaser',
-                            dataField: 'purchaser',
-                            area: 'column'
-                        },
-                        {
-                            caption: 'Count',
-                            dataField: 'count',
-                            area: 'data',
-                            summaryType: 'sum'
-                        },
-                    ],
-                    store:[]
-                },
-                allowSortingBySummary: true,
-                allowSorting: true,
-                allowFiltering: true,
-                allowExpandAll: true,
-                fieldChooser: {
-                    enabled: true,
-                },
-                showRowGrandTotals: true,
-                showColumnGrandTotals: true,
-                showBorders: true,
-                texts: {
-                    grandTotal: "Total All",    
-                    total: "Sub Total"               
-                },
-                onCellClick: function (e) {
-
-                    if (e.area !== "data") return;
-
-                    const pivot = e.component;
-
-                    const drillDownDataSource =
-                        pivot.getDataSource().createDrillDownDataSource(e.cell);
-
-                    drillDownDataSource.load().done(function (data) {
-
-                        console.log("Raw records in this cell:", data);
-
-                        // Get Query params and dataRow to Filter the Applications list
-                    });
-                },
-                onCellPrepared: function (e) {
-                    if (e.area === "data") {
-
-                        e.cellElement.css("cursor", "pointer");
-
-                        // Hover in
-                        e.cellElement.on("mouseenter", function () {
-                            $(this).css("background-color", "#e6f2ff");
-                        });
-
-                        // Hover out
-                        e.cellElement.on("mouseleave", function () {
-                            $(this).css("background-color", "");
-                        });
-
-                    }
-                }
-            }).dxPivotGrid('instance');
-
-            this.widgets.userTypeCategoryGrid = $(this.userTypeCategoryGridEl).dxPivotGrid({
-                dataSource: {
-                    fields:[
-                        {
-                            caption:'Purchaser',
-                            dataField:'purchaser',
-                            area:'row',
-                            headerFilter: {
-                                search: {
-                                enabled: true,
-                                },
-                            },
-                        },
-                        {
-                            caption:'Category',
-                            dataField:'category',
-                            area:'column',
-                            headerFilter: {
-                                search: {
-                                enabled: true,
-                                },
-                            },
-                        },
-                        {
-                            caption: 'Total Material',
-                            dataField: 'totalMaterial',
-                            area: 'data',
-                            summaryType: 'sum'
-                        },
-                        {
-                            caption: 'Total Item',
-                            dataField: 'totalItem',
-                            area: 'data',
-                            summaryType: 'sum'
-                        }
-                    ],
-                    store:[]
-                },
-                allowSortingBySummary: true,
-                allowSorting: true,
-                allowFiltering: true,
-                allowExpandAll: true,
-                fieldChooser: {
-                    enabled: true,
-                },
-                showRowGrandTotals: true,
-                showColumnGrandTotals: true,
-                showBorders: true,
-                texts: {
-                    grandTotal: "Total All",    
-                    total: "Sub Total"               
-                },
-            }).dxPivotGrid('instance');
-
-            this.widgets.recentGrid = $(this.recentGridEl).dxDataGrid({
-                dataSource: [],
-                showBorders: true,
-                columnAutoWidth: true,
-                rowAlternationEnabled: true,
-                paging: { enabled: false },
-                scrolling: { mode: 'standard' },
-                columns: [
-                    { dataField: 'applicationNumber', caption: 'Application No', minWidth: 140 },
-                    { dataField: 'applicationType', caption: 'Type', minWidth: 160 },
-                    { dataField: 'applicationStatus', caption: 'Status', minWidth: 120 },
-                    { dataField: 'requestor', caption: 'Purchaser', minWidth: 110 },
-                    { dataField: 'createdAt', caption: 'Created', dataType: 'date', format: 'dd-MM-yyyy HH:mm', minWidth: 150 }
-                ]
-            }).dxDataGrid('instance');
-
-            this.widgets.purchaserSupplierGrid = $(this.purchaserSupplierGridEl).dxDataGrid({
-                dataSource: [],
-                showBorders: true,
-                columnAutoWidth: true,
-                rowAlternationEnabled: true,
-                hoverStateEnabled: true,
-                paging: { enabled: false },
-                columns: [
-                    { dataField: 'purchaser', caption: 'Purchaser',  },
-                    { dataField: 'supplierCount', caption: 'Suppliers', dataType: 'number', minWidth: 50}
-                ]
-            }).dxDataGrid('instance');
+            Shared.initStaticWidgets(this);
         }
 
         bindEvents() {
@@ -473,35 +90,40 @@
         getQueryParams() {
             return {
                 period: this.period,
-                startDate: this.startDate ? formatYMD(this.startDate) : null,
-                endDate: this.endDate ? formatYMD(this.endDate) : null
+                startDate: this.startDate ? Shared.formatYMD(this.startDate) : null,
+                endDate: this.endDate ? Shared.formatYMD(this.endDate) : null
             };
         }
 
         async loadDashboard() {
-            const ctrl = Http.createAbortController('dashboard');
+            const loadingId = appLoading.show('Loading dashboard...');
+            try {
+                const ctrl = Http.createAbortController('dashboard');
 
-            const url = buildUrl(
-                this.config.endpoints.dashboard,
-                this.getQueryParams()
-            );
+                const url = Shared.buildUrl(
+                    this.config.endpoints.dashboard,
+                    this.getQueryParams()
+                );
 
-            const payload = await Http.get(url, {
-                signal: ctrl.signal
-            });
+                const payload = await Http.get(url, {
+                    signal: ctrl.signal
+                });
 
-            const result = payload && payload.data ? payload.data : null;
+                const result = payload && payload.data ? payload.data : null;
 
-            return {
-                application: result ? result.application : null,
-                monitoring: result ? result.monitoring : null,
-                masterData: result ? result.masterData : null
+                return {
+                    application: result ? result.application : null,
+                    monitoring: result ? result.monitoring : null,
+                    masterData: result ? result.masterData : null
+                }
+            } finally {
+                appLoading.hide(loadingId);
             }
         }
 
         async loadApplications() {
             const ctrl = Http.createAbortController('applications');
-            const url = buildUrl(
+            const url = Shared.buildUrl(
                 this.config.endpoints.applications,
                 this.getQueryParams()
             );
@@ -510,7 +132,7 @@
                 signal: ctrl.signal
             });
 
-            if(!payload || !payload.success){
+            if (!payload || !payload.success) {
                 appNotification.error('Failed to load applications data. Please try again later.', { duration: 5000 });
             }
 
@@ -524,7 +146,7 @@
                 signal: ctrl.signal
             });
 
-            if(!payload || !payload.success){
+            if (!payload || !payload.success) {
                 appNotification.error('Failed to load data monitoring info. Please try again later.', { duration: 5000 });
             }
 
@@ -538,7 +160,7 @@
                 signal: ctrl.signal
             });
 
-            if(!payload || !payload.success){
+            if (!payload || !payload.success) {
                 appNotification.error('Failed to load master data info. Please try again later.', { duration: 5000 });
             }
             return payload && payload.data ? payload.data : null;
@@ -548,7 +170,7 @@
             const loadingId = appLoading.showOn(this.appCardEl, { text: 'Loading applications...' });
             try {
                 const result = await this.loadApplications();
-                if(!result){
+                if (!result) {
                     appNotification.error('No data received for applications. Please try again later.', { duration: 5000 });
                 }
                 this.renderApplications(result);
@@ -574,46 +196,121 @@
         }
 
         renderApplications(app) {
-            renderKpiStrip(this.appKpiEl, [
+            Shared.renderKpiStrip(this.appKpiEl, [
                 { label: 'Total Applications', value: app.summary.total, hint: 'All statuses' },
                 { label: 'In Process', value: app.summary.inProcess, hint: 'Working on it' },
                 { label: 'Completed', value: app.summary.completed, hint: 'Done' },
                 { label: 'Waiting Effective', value: app.summary.waitingEffective, hint: 'Pending' }
             ]);
 
-            if (this.widgets.createdChart) this.widgets.createdChart.option('dataSource', app.createdSeries);
-            if (this.widgets.statusPie) this.widgets.statusPie.option('dataSource', app.statusDistribution);
+            if (this.widgets.createdApplicationsChart) this.widgets.createdApplicationsChart.option('dataSource', app.createdSeries);
+            if (this.widgets.applicationStatusPieChart) this.widgets.applicationStatusPieChart.option('dataSource', app.statusDistribution);
 
             // Transform type-purchaser data to pivot grid format
-            if (this.widgets.typePurchaserGrid) {
-                this.widgets.typePurchaserGrid.option('dataSource.store', app.purchaserTypeCounts
+            if (this.widgets.typePurchaserPivotGrid) {
+                this.widgets.typePurchaserPivotGrid.option('dataSource.store', app.purchaserTypeCounts
                     || []);
             }
         }
 
         renderDataMonitoring(dm) {
-            renderKpiStrip(this.dataKpiEl, [
+            Shared.renderKpiStrip(this.dataKpiEl, [
                 { label: 'Total Material', value: dm.summary.totalMaterial, hint: 'Records' },
                 { label: 'Total Item', value: dm.summary.totalItem, hint: 'Records' },
                 { label: 'Quotation Expire', value: dm.summary.quotationExpire, hint: 'Items' },
                 { label: 'Need Action (< 45 days)', value: dm.summary.needAction, hint: 'Items' }
             ]);
 
-            if (this.widgets.userTypeCategoryGrid) {
-                this.widgets.userTypeCategoryGrid.option('dataSource.store', dm.purchaserCategories || []);
+            if (this.widgets.userTypeCategoryPivotGrid) {
+                this.widgets.userTypeCategoryPivotGrid.option('dataSource.store', dm.purchaserCategories || []);
             }
         }
 
         renderMasterData(md) {
-            if (this.widgets.purchaserSupplierGrid) {
-                this.widgets.purchaserSupplierGrid.option('dataSource', md.purchaserSupplierCounts || []);
+            this._purchaserSupplierCounts = md?.purchaserSupplierCounts || [];
+            if (this.widgets.purchaserSupplierDataGrid) {
+                this.updatePurchaserSupplierChart(this, md.purchaserSupplierCounts || []);
             }
 
-            if (this.widgets.recentGrid) this.widgets.recentGrid.option('dataSource', md.recentApplications|| []);
+            if (this.widgets.recentApplicationsDataGrid) this.widgets.recentApplicationsDataGrid.option('dataSource', md.recentApplications || []);
             this.setCalendarEvents(md.calendars || []);
             this.renderCalendarEvents(this.widgets.calendar?.option('value') || new Date());
 
             this.renderExchangeRates(md.exchangeRate || []);
+        }
+
+        updatePurchaserSupplierChart(dashboard, rawData) {
+            const data = (rawData || []).filter(d => d.supplierCount > 0);
+            if (!data.length) {
+                dashboard.widgets.purchaserSupplierChart.option('dataSource', []);
+                return;
+            }
+
+            const values = data.map(d => d.supplierCount);
+            const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+            const std = Math.sqrt(values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length);
+
+            function getCssVar(name, fallback) {
+                try {
+                    const v = getComputedStyle(document.documentElement).getPropertyValue(name);
+                    const s = (v || '').trim();
+                    return s || fallback;
+                } catch {
+                    return fallback;
+                }
+            }
+
+            function hexToRgba(hex, alpha) {
+                const h = (hex || '').trim();
+                const m = /^#?([0-9a-fA-F]{6})$/.exec(h);
+                if (!m) return hex;
+                const n = parseInt(m[1], 16);
+                const r = (n >> 16) & 255;
+                const g = (n >> 8) & 255;
+                const b = n & 255;
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            }
+
+            // Use the site's design tokens (see :root in site.css)
+            const zoneColors = {
+                low: getCssVar('--success-color', '#27AE60'),
+                moderate: getCssVar('--accent-color', '#1890ff'),
+                high: getCssVar('--warning-color', '#F39C12'),
+                critical: getCssVar('--danger-color', '#E74C3C')
+            };
+
+            function getZoneColor(val) {
+                // Slight transparency makes the colors feel less "blocky" without going dull.
+                const alpha = 0.88;
+                if (val >= mean + std * 1.5) return hexToRgba(zoneColors.critical, alpha);
+                if (val >= mean + std * 0.5) return hexToRgba(zoneColors.high, alpha);
+                if (val >= mean - std * 0.5) return hexToRgba(zoneColors.moderate, alpha);
+                return hexToRgba(zoneColors.low, alpha);
+            }
+
+            function getZoneLabel(val) {
+                if (val >= mean + std * 1.5) return 'Critical Load';
+                if (val >= mean + std * 0.5) return 'High Load';
+                if (val >= mean - std * 0.5) return 'Moderate Load';
+                return 'Low Load';
+            }
+
+            dashboard.widgets.purchaserSupplierChart.option({
+                dataSource: data,
+                customizePoint: function (pointInfo) {
+                    const color = getZoneColor(pointInfo.value);
+                    return { color, hoverStyle: { color } };
+                },
+                tooltip: {
+                    enabled: true,
+                    customizeTooltip(arg) {
+                        return {
+                            // Keep DevExtreme's default tooltip styling (no custom HTML/colors)
+                            text: `${arg.argumentText}: ${Shared.formatNumber(arg.value)} suppliers (${getZoneLabel(arg.value)})`
+                        };
+                    }
+                }
+            });
         }
 
         setCalendarEvents(events) {
@@ -621,9 +318,9 @@
             this._calendarEventMap = new Map();
 
             for (const ev of this._calendarEvents) {
-                const d = toDate(ev.date);
+                const d = Shared.toDate(ev.date);
                 if (!d) continue;
-                const key = formatYMD(d);
+                const key = Shared.formatYMD(d);
                 if (!this._calendarEventMap.has(key)) this._calendarEventMap.set(key, []);
                 this._calendarEventMap.get(key).push({
                     date: d,
@@ -643,11 +340,12 @@
 
         renderCalendarEvents(date) {
             if (!this.calendarEventsEl) return;
-            const d = toDate(date) || new Date();
-            const key = formatYMD(d);
+            const d = Shared.toDate(date) || new Date();
+            const key = Shared.formatYMD(d);
             const list = this._calendarEventMap.get(key) || [];
 
-            const title = `Selected: ${key}`;
+            const titleDate = Shared.formatDMY ? Shared.formatDMY(d) : key;
+            const title = `Selected: ${titleDate}`;
 
             if (!list.length) {
                 this.calendarEventsEl.innerHTML = `
@@ -695,7 +393,7 @@
             if (!this.exchangeListEl) return;
             const list = Array.isArray(rates) ? rates : [];
             const now = new Date();
-            const key = monthKey(now);
+            const key = Shared.monthKey(now);
             const storageKey = `report.exchangeRates.${key}`;
 
             let baseline = null;

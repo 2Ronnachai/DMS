@@ -1,44 +1,20 @@
-const accountDataSource = new DevExpress.data.CustomStore({
-    key: 'id',
-    load: async () => {
-        const config = {
-            accounts: { enabled: true, ttl: 10 * 60 * 1000 },
-        };
-        try {
-            const response = config.accounts.enabled
-                ? await Http.getCache('accounts/lookups/', config.accounts.ttl)
-                : await Http.get('accounts/lookups/');
-
-            if (response && response.success) {
-                console.log('Loaded Accounts data from cache/server:', response.data);
-                return response.data || [];
-            }
-        } catch (error) {
-            console.error('Failed to load Accounts lookup:', error);
+async function createPurchaserManagementGridConfig() {
+    let accounts = [];
+    try {
+        const response = await Http.getCache('accounts/lookups/', 10 * 60 * 1000);
+        if (response && response.success) {
+            accounts = response.data || [];
         }
-        return [];
-    },
-    byKey: async (key) => {
-        const config = {
-            accounts: { enabled: true, ttl: 10 * 60 * 1000 },
-        };
-
-        try {
-            const response = config.accounts.enabled
-                ? await Http.getCache('accounts/lookups/', config.accounts.ttl)
-                : await Http.get('accounts/lookups/');
-            if (response && response.success) {
-                const data = response.data || [];
-                return data.find(item => item.id === key);
-            }
-        } catch (error) {
-            console.error('Failed to load Account by key:', error);
-        }
-        return null;
+    } catch (error) {
+        console.error('Failed to load Accounts lookup:', error);
     }
-});
 
-const PurchaserManagementGridConfig = {
+    const accountDataSource = new DevExpress.data.ArrayStore({
+        key: 'id',
+        data: accounts
+    });
+
+    return {
     gridId: 'purchaserManagementGrid',
     container: '#gridPurchaserManagement',
     endpoint: `${window.APP_CONFIG.baseUrl}dxGridPurchasers`,
@@ -162,6 +138,7 @@ const PurchaserManagementGridConfig = {
         okText: 'Delete',
         cancelText: 'Cancel',
     },
-};
+    };
+}
 
-window.PurchaserManagementGridConfig = PurchaserManagementGridConfig;
+window.createPurchaserManagementGridConfig = createPurchaserManagementGridConfig;

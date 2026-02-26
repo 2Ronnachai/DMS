@@ -59,6 +59,10 @@
 
 				<div class="report-subheader">Applications by Type / Purchaser (Count)</div>
 				<div id="report-app-type-purchaser-grid" class="report-grid"></div>
+
+				<div id="report-typepurchaser-drilldown-popup">
+					<div id="report-typepurchaser-drilldown-grid"></div>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -77,6 +81,10 @@
 
 				<div class="report-subheader">Data by UserType / Category</div>
 				<div id="report-data-usertype-category-grid" class="report-grid"></div>
+
+                <div id="report-typecategory-drilldown-popup">
+					<div id="report-typecategory-drilldown-grid"></div>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -129,8 +137,14 @@
 				applications: 'dashboard/applications',
                 monitoring: 'dashboard/monitoring',
                 masterData: 'dashboard/master-data',
+
+                applicationsDrilldown: 'dashboard/applications/drilldown',
+                materialsDrilldown: 'dashboard/monitoring/materials/drilldown',
+                itemsDrilldown: 'dashboard/monitoring/items/drilldown',
+                supplierPurchaserDrilldown: 'dashboard/master-data/suppliers-purchasers/drilldown',
 			}
 		};
 	</script>
+	<script src="~/js/report/report-dashboard.shared.js" asp-append-version="true"></script>
 	<script src="~/js/report/report-dashboard.js" asp-append-version="true"></script>
 }

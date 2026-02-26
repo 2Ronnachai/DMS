@@ -18,11 +18,14 @@
 
 @section Scripts {
     <partial name="_GridScripts" />
-    <script src="~/js/grids/managements/costcenter-management-config.js"></script>
+    <script src="~/js/grids/managements/costcenter-management-config.js" asp-append-version="true"></script>
     
     <script>
         $(document).ready(function () {
-            const grid = GridFactory.createGrid(CostCenterManagementGridConfig);
+            (async () => {
+                const config = await window.createCostCenterManagementGridConfig();
+                await GridFactory.createGrid(config);
+            })();
         });
     </script>
 }

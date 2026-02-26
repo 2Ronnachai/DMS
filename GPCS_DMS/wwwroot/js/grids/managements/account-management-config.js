@@ -17,49 +17,23 @@ async function AccountManagementService(nId) {
     }
 }
 
-const userTypeDataSource = new DevExpress.data.CustomStore({
-    key: 'id',
-    load: async () => {
-        const config = {
-            userTypes: { enabled: true, ttl: 10 * 60 * 1000 },
-        };
-
-        try {
-            const response = config.userTypes.enabled
-                ? await Http.getCache('userTypes/lookups/', config.userTypes.ttl)
-                : await Http.get('userTypes/lookups/');
-
-            if (response && response.success) {
-                console.log('Loaded User Types data from cache/server:', response.data);
-                return response.data || [];
-            }
-        } catch (error) {
-            console.error('Failed to load User Types lookup:', error);
+async function createAccountManagementGridConfig() {
+    let userTypes = [];
+    try {
+        const response = await Http.getCache('userTypes/lookups/', 10 * 60 * 1000);
+        if (response && response.success) {
+            userTypes = response.data || [];
         }
-        return [];
-    },
-    byKey: async (key) => {
-        const config = {
-            userTypes: { enabled: true, ttl: 10 * 60 * 1000 },
-        };
-
-        try {
-            const response = config.userTypes.enabled
-                ? await Http.getCache('userTypes/lookups/', config.userTypes.ttl)
-                : await Http.get('userTypes/lookups/');
-
-            if (response && response.success) {
-                const data = response.data || [];
-                return data.find(item => item.id === key);
-            }
-        } catch (error) {
-            console.error('Failed to load User Type by key:', error);
-        }
-        return null;
+    } catch (error) {
+        console.error('Failed to load User Types lookup:', error);
     }
-});
 
-const AccountManagementGridConfig = {
+    const userTypeDataSource = new DevExpress.data.ArrayStore({
+        key: 'id',
+        data: userTypes
+    });
+
+    return {
     gridId: "accountManagementGrid",
     container: "#gridAccountManagement",
     endpoint: `${window.APP_CONFIG.baseUrl}dxGridAccounts`,
@@ -259,6 +233,7 @@ const AccountManagementGridConfig = {
         okText: 'Delete',
         cancelText: 'Cancel'
     }
-};
+    };
+}
 
-window.AccountManagementGridConfig = AccountManagementGridConfig;
+window.createAccountManagementGridConfig = createAccountManagementGridConfig;

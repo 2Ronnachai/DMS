@@ -16,11 +16,14 @@
 </div>
 @section Scripts {
     <partial name="_GridScripts" />
-    <script src="~/js/grids/managements/supplier-purchaser-management-config.js"></script>
+    <script src="~/js/grids/managements/supplier-purchaser-management-config.js" asp-append-version="true"></script>
     
     <script>
         $(document).ready(function () {
-            const supplierPurchaserGrid = GridFactory.createGrid(SupplierPurchaserManagementGridConfig);
+            (async () => {
+                const config = await window.createSupplierPurchaserManagementGridConfig();
+                await GridFactory.createGrid(config);
+            })();
         });
     </script>
 }

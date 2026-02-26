@@ -1,43 +1,20 @@
-const outBoxStatusDataSource = new DevExpress.data.CustomStore({
-    key: 'id',
-    load: async () => {
-        const config = {
-            outBoxStatus: { enabled: true, ttl: 10 * 60 * 1000 },
-        };
-
-        try {
-            const response = config.outBoxStatus.enabled
-                ? await Http.getCache('outBoxStatus/lookups/', config.outBoxStatus.ttl)
-                : await Http.get('outBoxStatus/lookups/');
-            if (response && response.success) {
-                console.log('Loaded Outbox Status data from cache/server:', response.data);
-                return response.data || [];
-            }
-        } catch (error) {
-            console.error('Failed to load Outbox Status lookup:', error);
+async function createOutBoxEventsManagementGridConfig() {
+    let statuses = [];
+    try {
+        const response = await Http.getCache('outBoxStatus/lookups/', 10 * 60 * 1000);
+        if (response && response.success) {
+            statuses = response.data || [];
         }
-        return [];
-    },
-    byKey: async (key) => {
-        const config = {
-            outBoxStatus: { enabled: true, ttl: 10 * 60 * 1000 },
-        };
-        try {
-            const response = config.outBoxStatus.enabled
-                ? await Http.getCache('outBoxStatus/lookups/', config.outBoxStatus.ttl)
-                : await Http.get('outBoxStatus/lookups/');
-            if (response && response.success) {
-                const data = response.data || [];
-                return data.find(item => item.id === key);
-            }
-        } catch (error) {
-            console.error('Failed to load Outbox Status by key:', error);
-        }
-        return null;
+    } catch (error) {
+        console.error('Failed to load Outbox Status lookup:', error);
     }
-});
 
-const OutBoxEventsManagementGridConfig = {
+    const outBoxStatusDataSource = new DevExpress.data.ArrayStore({
+        key: 'id',
+        data: statuses
+    });
+
+    return {
     gridId: 'outBoxEventsManagementGrid',
     container: '#gridOutBoxEventsManagement',
     endpoint: `${window.APP_CONFIG.baseUrl}dxGridOutBoxEvents`,
@@ -87,7 +64,8 @@ const OutBoxEventsManagementGridConfig = {
 
         ...GridFactory.getAuditColumns()
     ]
-};
+    };
+}
 
-window.OutBoxEventsManagementGridConfig = OutBoxEventsManagementGridConfig;
+window.createOutBoxEventsManagementGridConfig = createOutBoxEventsManagementGridConfig;
     

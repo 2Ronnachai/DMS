@@ -1,28 +1,20 @@
-const groupOfGoodsDataSource = new DevExpress.data.CustomStore({
-    key: 'id',
-    load: async () => {
-        const config = {
-            groupOfGoods: { enabled: true, ttl: 10 * 60 * 1000 },
-        };
-
-        try {
-            const response = config.groupOfGoods.enabled
-                ? await Http.getCache('groupofgoods/lookups/', config.groupOfGoods.ttl)
-                : await Http.get('groupofgoods/lookups/');
-
-            if (response && response.success) {
-                console.log('Loaded Group of Goods data from cache/server:', response.data);
-                return response.data || [];
-            }
-        } catch (error) {
-            console.error('Failed to load Group of Goods lookup:', error);
+async function createDataItemGridConfig() {
+    let groupOfGoods = [];
+    try {
+        const response = await Http.getCache('groupofgoods/lookups/', 10 * 60 * 1000);
+        if (response && response.success) {
+            groupOfGoods = response.data || [];
         }
-
-        return [];
+    } catch (error) {
+        console.error('Failed to load Group of Goods lookup:', error);
     }
-});
 
-const DataItemGridConfig = {
+    const groupOfGoodsDataSource = new DevExpress.data.ArrayStore({
+        key: 'id',
+        data: groupOfGoods
+    });
+
+    return {
     gridId: 'gridDataItemGrid',
     container: '#gridDataItem',
     endpoint: window.APP_CONFIG.baseUrl + 'dxGridDataItems/',
@@ -184,5 +176,7 @@ const DataItemGridConfig = {
         }),
         ...GridFactory.getAuditColumns()
     ]
-};
-window.DataItemGridConfig = DataItemGridConfig;
+    };
+}
+
+window.createDataItemGridConfig = createDataItemGridConfig;

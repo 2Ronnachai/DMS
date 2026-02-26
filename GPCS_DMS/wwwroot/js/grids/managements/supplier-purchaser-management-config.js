@@ -1,80 +1,37 @@
-const purchaserDataSource = new DevExpress.data.CustomStore({
-    key: 'id',
-    load: async () => {
-        const config = {
-            purchasers: { enabled: true, ttl: 10 * 60 * 1000 },
-        };
+async function loadSupplierPurchaserLookups(ttlMs = 10 * 60 * 1000) {
+    const loadLookup = async (endpoint, label) => {
         try {
-            const response = config.purchasers.enabled
-                ? await Http.getCache('purchasers/lookups/', config.purchasers.ttl)
-                : await Http.get('purchasers/lookups/');
+            const response = await Http.getCache(endpoint, ttlMs);
             if (response && response.success) {
-                console.log('Loaded Purchasers data from cache/server:', response.data);
                 return response.data || [];
             }
         } catch (error) {
-            console.error('Failed to load Purchasers lookup:', error);
+            console.error(`Failed to load ${label} lookup:`, error);
         }
         return [];
-    },
-    byKey: async (key) => {
-        const config = {
-            purchasers: { enabled: true, ttl: 10 * 60 * 1000 },
-        };
-        try {
-            const response = config.purchasers.enabled
-                ? await Http.getCache('purchasers/lookups/', config.purchasers.ttl)
-                : await Http.get('purchasers/lookups/');
-            if (response && response.success) {
-                const data = response.data || [];
-                return data.find(item => item.id === key);
-            }
-        } catch (error) {
-            console.error('Failed to load Purchaser by key:', error);
-        }
-        return null;
-    }
-});
+    };
 
-const supplierDataSource = new DevExpress.data.CustomStore({
-    key: 'id',
-    load: async () => {
-        const config = {
-            suppliers: { enabled: true, ttl: 10 * 60 * 1000 },
-        };
-        try {
-            const response = config.suppliers.enabled
-                ? await Http.getCache('suppliers/lookups/', config.suppliers.ttl)
-                : await Http.get('suppliers/lookups/');
-            if (response && response.success) {
-                console.log('Loaded Suppliers data from cache/server:', response.data);
-                return response.data || [];
-            }
-        } catch (error) {
-            console.error('Failed to load Suppliers lookup:', error);
-        }
-        return [];
-    },
-    byKey: async (key) => {
-        const config = {
-            suppliers: { enabled: true, ttl: 10 * 60 * 1000 },
-        };
-        try {
-            const response = config.suppliers.enabled
-                ? await Http.getCache('suppliers/lookups/', config.suppliers.ttl)
-                : await Http.get('suppliers/lookups/');
-            if (response && response.success) {
-                const data = response.data || [];
-                return data.find(item => item.id === key);
-            }
-        } catch (error) {
-            console.error('Failed to load Supplier by key:', error);
-        }
-        return null;
-    }
-});
+    const [suppliers, purchasers] = await Promise.all([
+        loadLookup('suppliers/lookups/', 'Suppliers'),
+        loadLookup('purchasers/lookups/', 'Purchasers')
+    ]);
 
-const SupplierPurchaserManagementGridConfig = {
+    return {
+        supplierDataSource: new DevExpress.data.ArrayStore({
+            key: 'id',
+            data: suppliers
+        }),
+        purchaserDataSource: new DevExpress.data.ArrayStore({
+            key: 'id',
+            data: purchasers
+        })
+    };
+}
+
+async function createSupplierPurchaserManagementGridConfig() {
+    const { supplierDataSource, purchaserDataSource } = await loadSupplierPurchaserLookups();
+
+    return {
     gridId: "supplierPurchaserManagementGrid",
     container: "#gridSupplierPurchaserManagement",
     endpoint: `${window.APP_CONFIG.baseUrl}dxGridSupplierPurchasers`,
@@ -109,6 +66,7 @@ const SupplierPurchaserManagementGridConfig = {
                         displayExpr: 'displayName',
                         valueExpr: 'id',
                         searchEnabled: true,
+                        searchExpr: ['name', 'code'],
                         showClearButton: true,
                         paginate: true,
                         pageSize: 10,
@@ -127,6 +85,7 @@ const SupplierPurchaserManagementGridConfig = {
                         displayExpr: 'displayName',
                         valueExpr: 'id',
                         searchEnabled: true,
+                        searchExpr: ['name', 'code'],
                         showClearButton: true,
                         paginate: true,
                         pageSize: 10,
@@ -202,6 +161,8 @@ const SupplierPurchaserManagementGridConfig = {
             minWidth: 250,
             fixed: true,
             fixedPosition: 'left',
+            searchEnabled: true,
+            searchExpr: ['name', 'code'],
             validationRules: [{ type: 'required', message: 'Supplier is required' }],
         }),
         GridHelper.createLookupColumn('purchaserId', 'Purchaser', purchaserDataSource, 'displayName', 'id', {
@@ -209,4 +170,7 @@ const SupplierPurchaserManagementGridConfig = {
             validationRules: [{ type: 'required', message: 'Purchaser is required' }],
         }),
     ],
-};
+    };
+}
+
+window.createSupplierPurchaserManagementGridConfig = createSupplierPurchaserManagementGridConfig;

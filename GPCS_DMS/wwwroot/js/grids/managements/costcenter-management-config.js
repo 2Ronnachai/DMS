@@ -1,80 +1,34 @@
-const purchaserDataSource = new DevExpress.data.CustomStore({
-    key: 'id',
-    load: async () => {
-        const config = {
-            purchasers: { enabled: true, ttl: 10 * 60 * 1000 },
-        };
+async function createCostCenterManagementGridConfig() {
+    const ttlMs = 10 * 60 * 1000;
+
+    const loadLookup = async (endpoint, label) => {
         try {
-            const response = config.purchasers.enabled
-                ? await Http.getCache('purchasers/lookups/', config.purchasers.ttl)
-                : await Http.get('purchasers/lookups/');
+            const response = await Http.getCache(endpoint, ttlMs);
             if (response && response.success) {
-                console.log('Loaded Purchasers data from cache/server:', response.data);
                 return response.data || [];
             }
         } catch (error) {
-            console.error('Failed to load Purchasers lookup:', error);
+            console.error(`Failed to load ${label} lookup:`, error);
         }
         return [];
-    },
-    byKey: async (key) => {
-        const config = {
-            purchasers: { enabled: true, ttl: 10 * 60 * 1000 },
-        };
-        try {
-            const response = config.purchasers.enabled
-                ? await Http.getCache('purchasers/lookups/', config.purchasers.ttl)
-                : await Http.get('purchasers/lookups/');
-            if (response && response.success) {
-                const data = response.data || [];
-                return data.find(item => item.id === key);
-            }
-        } catch (error) {
-            console.error('Failed to load Purchaser by key:', error);
-        }
-        return null;
-    }
-});
+    };
 
-const costCenterDataSource = new DevExpress.data.CustomStore({
-    key: 'id',
-    load: async () => {
-        const config = {
-            costCenters: { enabled: true, ttl: 10 * 60 * 1000 },
-        };
-        try {
-            const response = config.costCenters.enabled
-                ? await Http.getCache('purchaserCostCenter/lookups/', config.costCenters.ttl)
-                : await Http.get('purchaserCostCenter/lookups/');
-            if (response && response.success) {
-                console.log('Loaded Cost Centers data from cache/server:', response.data);
-                return response.data || [];
-            }
-        } catch (error) {
-            console.error('Failed to load Cost Centers lookup:', error);
-        }
-        return [];
-    },
-    byKey: async (key) => {
-        const config = {
-            costCenters: { enabled: true, ttl: 10 * 60 * 1000 },
-        };
-        try {
-            const response = config.costCenters.enabled
-                ? await Http.getCache('purchaserCostCenter/lookups/', config.costCenters.ttl)
-                : await Http.get('purchaserCostCenter/lookups/');
-            if (response && response.success) {
-                const data = response.data || [];
-                return data.find(item => item.id === key);
-            }
-        } catch (error) {
-            console.error('Failed to load Cost Center by key:', error);
-        }
-        return null;
-    }
-});
+    const [purchasers, costCenters] = await Promise.all([
+        loadLookup('purchasers/lookups/', 'Purchasers'),
+        loadLookup('purchaserCostCenter/lookups/', 'Cost Centers')
+    ]);
 
-const CostCenterManagementGridConfig = {
+    const purchaserDataSource = new DevExpress.data.ArrayStore({
+        key: 'id',
+        data: purchasers
+    });
+
+    const costCenterDataSource = new DevExpress.data.ArrayStore({
+        key: 'id',
+        data: costCenters
+    });
+
+    return {
     gridId: 'costCenterManagementGrid',
     container: '#gridCostCenterManagement',
     endpoint: `${window.APP_CONFIG.baseUrl}dxGridPurchaserCostCenter`,
@@ -185,4 +139,7 @@ const CostCenterManagementGridConfig = {
         okText: 'Yes',
         cancelText: 'No',
     },
-};
+    };
+}
+
+window.createCostCenterManagementGridConfig = createCostCenterManagementGridConfig;

@@ -4,6 +4,7 @@ const DataSupplierGridConfig = {
     endpoint: window.APP_CONFIG.baseUrl + 'dxGridSuppliers',
     keyField: 'id',
     exportFileName: 'Data_Supplier',
+    remoteOperations: false, 
     columns: [
         GridHelper.createNumberColumn('id', 'ID', '#,##0', {
             width: 80,
@@ -45,6 +46,11 @@ const DataSupplierGridConfig = {
             width: 110,
             caption: 'No. of Purchasers',
             allowEditing: false,
+            // allowFiltering: false,
+            // allowSorting: false,
+            // allowReordering: false,
+            // allowGrouping: false,
+            // allowHeaderFiltering: false,
             formItem: { visible: false },
         }),
         // Purchaser Names with Tooltip
@@ -52,11 +58,11 @@ const DataSupplierGridConfig = {
             dataField: 'purchaserNames',
             width: 250,
             allowEditing: false,
-            allowFiltering: false,
-            allowSorting: false,
-            allowReordering: false,
-            allowGrouping: false,
-            allowHeaderFiltering: false,
+            // allowFiltering: false,
+            // allowSorting: false,
+            // allowReordering: false,
+            // allowGrouping: false,
+            // allowHeaderFiltering: false,
             formItem: { visible: false },
             calculateDisplayValue: (rowData) => {
                 if (rowData.purchaserNames){

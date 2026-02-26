@@ -16,11 +16,14 @@
 </div>
 @section Scripts {
     <partial name="_GridScripts" />
-    <script src="~/js/grids/managements/category-management-config.js"></script>
+    <script src="~/js/grids/managements/category-management-config.js" asp-append-version="true"></script>
     
     <script>
         $(document).ready(function () {
-            const grid = GridFactory.createGrid(CategoryManagementGridConfig);
+            (async () => {
+                const config = await window.createCategoryManagementGridConfig();
+                await GridFactory.createGrid(config);
+            })();
         });
     </script>
 }

@@ -18,11 +18,14 @@
 
 @section Scripts {
     <partial name="_GridScripts" />
-    <script src="~/js/grids/managements/account-management-config.js"></script>
+    <script src="~/js/grids/managements/account-management-config.js" asp-append-version="true"></script>
     
     <script>
         $(document).ready(function () {
-            const grid = GridFactory.createGrid(AccountManagementGridConfig);
+            (async () => {
+                const config = await window.createAccountManagementGridConfig();
+                await GridFactory.createGrid(config);
+            })();
         });
     </script>
 }

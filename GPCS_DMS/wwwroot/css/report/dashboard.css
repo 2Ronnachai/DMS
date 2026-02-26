@@ -47,7 +47,7 @@
 }
 
 .report-dashboard .report-grid {
-    height: 220px;
+    height: 240px;
 }
 
 .report-dashboard .report-subheader {
@@ -301,6 +301,29 @@
 .report-dashboard .report-calendar-dot--holiday { background: var(--danger-color); }
 .report-dashboard .report-calendar-dot--inventory { background: var(--success-color); }
 .report-dashboard .report-calendar-dot--monthClose { background: var(--warning-color); }
+
+/* Calendar selected/hover states (required because we use a custom cellTemplate) */
+.report-dashboard .report-calendar .dx-calendar-cell .report-cal-cell {
+    border-radius: 4px;
+}
+
+.report-dashboard .report-calendar .dx-calendar-cell.dx-state-hover .report-cal-cell {
+    background: var(--bg-light);
+}
+
+.report-dashboard .report-calendar .dx-calendar-cell.dx-calendar-selected-date .report-cal-cell {
+    background: var(--accent-color);
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.report-dashboard .report-calendar .dx-calendar-cell.dx-calendar-today:not(.dx-calendar-selected-date) .report-cal-cell {
+    box-shadow: inset 0 0 0 2px var(--accent-color);
+}
+
+.report-dashboard .report-calendar .dx-calendar-cell.dx-calendar-selected-date .report-calendar-dot {
+    box-shadow: 0 0 0 1px #ffffff;
+}
 
 /* Exchange rate compact list */
 .report-dashboard .report-exchange-list {
