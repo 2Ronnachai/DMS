@@ -236,7 +236,7 @@
             this.setCalendarEvents(md.calendars || []);
             this.renderCalendarEvents(this.widgets.calendar?.option('value') || new Date());
 
-            this.renderExchangeRates(md.exchangeRate || []);
+            this.renderExchangeRates(md.exchangeRates || []);
         }
 
         updatePurchaserSupplierChart(dashboard, rawData) {
@@ -365,6 +365,8 @@
                 if (type === 'holiday') return 'report-calendar-badge--holiday';
                 if (type === 'inventory') return 'report-calendar-badge--inventory';
                 if (type === 'monthClose') return 'report-calendar-badge--monthClose';
+                if (type === 'systemMaintenance') return 'report-calendar-badge--maintenance';
+                if (type === 'training') return 'report-calendar-badge--training';
                 return '';
             };
 
@@ -372,6 +374,8 @@
                 if (type === 'holiday') return 'Holiday';
                 if (type === 'inventory') return 'Inventory';
                 if (type === 'monthClose') return 'Close';
+                if (type === 'systemMaintenance') return 'Maintenance';
+                if (type === 'training') return 'Training';
                 return (type || 'Info');
             };
 
@@ -420,7 +424,7 @@
             };
 
             const rows = list.map(r => {
-                const cur = r.currency;
+                const cur = r.currencyCode || r.currency || 'N/A';
                 const rate = Number(r.rate) || 0;
                 const base = Number(baseline[cur]);
 

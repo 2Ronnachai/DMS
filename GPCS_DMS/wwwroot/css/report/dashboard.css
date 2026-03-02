@@ -298,9 +298,52 @@
     bottom: 6px;
 }
 
-.report-dashboard .report-calendar-dot--holiday { background: var(--danger-color); }
-.report-dashboard .report-calendar-dot--inventory { background: var(--success-color); }
-.report-dashboard .report-calendar-dot--monthClose { background: var(--warning-color); }
+/* Calendar dot colors */
+.report-dashboard .report-calendar-dot--holiday { 
+    background: var(--danger-color); 
+}
+
+.report-dashboard .report-calendar-dot--inventory { 
+    background: var(--success-color); 
+}
+
+.report-dashboard .report-calendar-dot--monthClose { 
+    background: var(--warning-color); 
+}
+
+.report-dashboard .report-calendar-dot--maintenance { 
+    background: #9333ea; 
+}
+
+.report-dashboard .report-calendar-dot--training { 
+    background: #0ea5e9; 
+}
+
+/* Badge colors for event list */
+.report-dashboard .report-calendar-badge--holiday {
+    background: var(--danger-color);
+    color: #ffffff;
+}
+
+.report-dashboard .report-calendar-badge--inventory {
+    background: var(--success-color);
+    color: #ffffff;
+}
+
+.report-dashboard .report-calendar-badge--monthClose {
+    background: var(--warning-color);
+    color: #ffffff;
+}
+
+.report-dashboard .report-calendar-badge--maintenance {
+    background: #9333ea;
+    color: #ffffff;
+}
+
+.report-dashboard .report-calendar-badge--training {
+    background: #0ea5e9;
+    color: #ffffff;
+}
 
 /* Calendar selected/hover states (required because we use a custom cellTemplate) */
 .report-dashboard .report-calendar .dx-calendar-cell .report-cal-cell {
