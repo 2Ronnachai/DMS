@@ -273,11 +273,12 @@ class AppMain {
         if (this.header) {
             isChanged = this.header.isDataChanged();
         }
+        console.log('Header data changed:', isChanged);
 
         if (!isChanged && this.grid) {
             isChanged = this.grid.isDataChanged();
         }
-
+        console.log('Grid data changed:', isChanged);
         return isChanged;
     }
 

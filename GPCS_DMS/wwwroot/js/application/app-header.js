@@ -2,6 +2,7 @@ class AppHeader {
     constructor(appMain, applicationData = null) {
         this.appMain = appMain;
         this.data = applicationData;
+        this.originalData = JSON.parse(JSON.stringify(applicationData));
         this.container = document.getElementById('headerSection');
 
         this.mode = null; // 'create', 'edit', 'view', 'approve'
@@ -449,9 +450,11 @@ class AppHeader {
             )
         }
 
+        const formData = JSON.parse(JSON.stringify(this.data));
+
         // DevExtreme Form Configuration
         const formConfig = {
-            formData: this.data,
+            formData: formData,
             labelLocation: 'left',
             showColonAfterLabel: false,
             readOnly: this.mode === 'view',
@@ -1233,8 +1236,9 @@ class AppHeader {
 
         // 1. Check form data changes
         const currentData = this.formInstance.option('formData');
-        const originalData = this.data;
-        const isFormDataChanged = JSON.stringify(currentData) !== JSON.stringify(originalData);
+        const isFormDataChanged = JSON.stringify(currentData) !== JSON.stringify(this.originalData);
+        console.log('Current Form Data:', currentData);
+        console.log('Original Form Data:', this.originalData);
 
         // 2. Check file attachment changes
         const hasNewFiles = this.pendingFiles.length > 0;

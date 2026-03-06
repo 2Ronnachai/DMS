@@ -5,6 +5,20 @@ class AppButtonHandler {
         this.dialog = appMain.dialog;
         this.loading = appMain.loading;
         this.notification = appMain.notification;
+
+        this._allowUnload = false;
+        this._beforeUnloadHandler = this._onBeforeUnload.bind(this);
+        window.addEventListener('beforeunload', this._beforeUnloadHandler);
+    }
+
+    _onBeforeUnload(event) {
+        if (this._allowUnload) return;
+        const isDataChanged = this.appMain.isDataChanged();
+        console.log('Data changed:', isDataChanged);
+        if (isDataChanged) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
     }
 
     async save() {
@@ -369,6 +383,7 @@ class AppButtonHandler {
 
     nevigateToHomePage() {
         // Navigate back to previous page or dashboard => window.APP_CONFIG.host
+        this._allowUnload = true;
         window.location.href = window.APP_CONFIG.host;
     }
 

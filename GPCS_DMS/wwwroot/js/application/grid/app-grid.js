@@ -2,6 +2,10 @@ class AppGrid {
     constructor(appMain, applicationData) {
         this.appMain = appMain;
         this.data = applicationData;
+
+        this.originalData = applicationData ? 
+            JSON.parse(JSON.stringify(applicationData)) : null;
+
         this.container = document.getElementById('itemsSection');
         this.gridInstance = null;
         this.gridConfig = null;
@@ -29,8 +33,11 @@ class AppGrid {
             this.appMain.mode
         );
 
+        const materialsData = this.data?.materials ? 
+            JSON.parse(JSON.stringify(this.data.materials)) : [];
+
         const baseConfig = {
-            dataSource: this.data?.materials || [],
+            dataSource: materialsData,
             showBorders: true,
             showRowLines: true,
             showColumnLines: true,
@@ -95,7 +102,9 @@ class AppGrid {
     
     isDataChanged() {
         const currentItems = this.get() || [];
-        const originalItems = this.data?.materials || [];
+        const originalItems = this.originalData?.materials || [];
+        console.log('Current Items:', currentItems);
+        console.log('Original Items:', originalItems);
         
         if (currentItems.length !== originalItems.length) {
             return true;
@@ -114,9 +123,15 @@ class AppGrid {
 
     update(data) {
         this.data = data;
+
+        this.originalData = data ? JSON.parse(JSON.stringify(data)) : null;
+
         if (this.gridInstance) {
-             this.initialSnapshots.clear();
-            this.set(data?.materials || []);
+            this.initialSnapshots.clear();
+            const materialsData = data?.materials ? 
+                JSON.parse(JSON.stringify(data.materials)) : [];
+            
+            this.set(materialsData);
         }
     }
 
@@ -124,9 +139,9 @@ class AppGrid {
         if (this.gridInstance) {
             const dataSource = this.get() || [];
 
-            if (!material.item.itemHistory) {
-                const snapshot = this._createSnapshot(material.item);
-                this.initialSnapshots.set(material.item.itemCode, snapshot);
+            if (!itemCopy.item.itemHistory) {
+                const snapshot = this._createSnapshot(itemCopy.item);
+                this.initialSnapshots.set(itemCopy.item.itemCode, snapshot);
             }
 
             dataSource.push(item);
@@ -139,7 +154,9 @@ class AppGrid {
         if (this.gridInstance) {
             const dataSource = this.get() || [];
 
-             items.forEach(material => {
+            const itemsCopy = JSON.parse(JSON.stringify(items));
+
+            itemsCopy.forEach(material => {
                 if (!material.item.itemHistory) {
                     const snapshot = this._createSnapshot(material.item);
                     this.initialSnapshots.set(material.item.itemCode, snapshot);
@@ -157,7 +174,8 @@ class AppGrid {
             const dataSource = this.get() || [];
             const index = dataSource.findIndex(item => item.id === itemId);
             if (index !== -1) {
-                dataSource[index] = { ...dataSource[index], ...updatedData };
+                const updatedDataCopy = JSON.parse(JSON.stringify(updatedData));
+                dataSource[index] = { ...dataSource[index], ...updatedDataCopy };
                 this.set(dataSource);
                 this.refresh();
             }
@@ -225,6 +243,11 @@ class AppGrid {
         if (this.gridInstance) {
             this.set([]);
             this.initialSnapshots.clear();
+
+            if (this.originalData) {
+                this.originalData.materials = [];
+            }
+
             this.refresh();
         }
     }
