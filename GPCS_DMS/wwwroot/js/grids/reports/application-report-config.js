@@ -146,10 +146,15 @@ const ApplicationReportGridConfig = {
         {
             type: 'buttons',
             buttons: [
+                // {
+                //     hint: 'View Details',
+                //     icon: 'info',
+                //     onClick: (e) => handleViewDetails(e),
+                // },
                 {
-                    hint: 'View Details',
-                    icon: 'info',
-                    onClick: (e) => handleViewDetails(e),
+                    hint: 'Print',
+                    icon: 'print',
+                    onClick: (e) => handleViewReport(e),
                 },
                 {
                     hint: 'Open Form',
@@ -162,89 +167,100 @@ const ApplicationReportGridConfig = {
         ...GridFactory.getAuditColumns()
     ],
     onRowPrepared: (e) => {
-        // if (e.rowType === 'data') {
-        //     e.rowElement.css('cursor', 'pointer');
-        // }
+        if (e.rowType === 'data') {
+            e.rowElement.css('cursor', 'pointer');
+        }
     },
-    onRowClick: (e) => {
-
-    }
+    onRowClick: async (e) => handleOnRowClick(e)
 };
 
-function handleOnClick(e){
-    console.log('Row clicked:', e.row.rowType);
+function handleOnClick(e) {
     e.event.stopPropagation();
-    if (e.row.rowType=== 'data') {
+    if (e.row.rowType === 'data') {
         const rowData = e.row.data;
         const url = `${window.APP_CONFIG?.host}Application/Requisition?applicationType=${rowData.applicationType}&id=${rowData.id}`;
         window.open(url, '_blank');
     }
 }
 
-async function handleViewDetails(e) {
-    e.event?.stopPropagation?.();
+function handleViewReport(e) {
+    e.event.stopPropagation();
+    if (e.row.rowType === 'data') {
+        const rowData = e.row.data;
+        const url = `${window.APP_CONFIG?.host}Application/Report?applicationType=${rowData.applicationType}&id=${rowData.id}`;
+        // navigate to report page on this tab
+        window.location.href = url;
 
-    if (e.row.rowType !== 'data') return;
-
-    const { applicationType, id } = e.row.data;
-
-    const response = await Http.get(
-        `${window.APP_CONFIG.baseUrl}Applications/workflow-step?applicationType=${applicationType}&applicationId=${id}`
-    );
-
-    if (!response?.success) return;
-
-    const appData = response.data;
-    showStepperPopup(appData);
+    }
 }
 
-function showStepperPopup(appData) {
+async function handleOnRowClick(e) {
+    if (e.rowType === 'data') {
+        const rowData = e.data;
+        const loadingId = appLoading.show('Loading workflow details...');
+        const url = `${window.APP_CONFIG.baseUrl}Applications/workflow-step?applicationType=${rowData.applicationType}&applicationId=${rowData.id}`
+        try {
+            const response = await Http.get(url);
+            if (response?.success) {
+                const appData = response.data;
+                showStepperPopup(appData);
+            }
+        } catch (error) {
+            appNotification.show('Failed to load workflow details: ' + error.message, 'error');
+        }finally{
+            appLoading.hide(loadingId);
+        }
+    }
+}
 
-    document.getElementById("workflowPopup")?.remove();
+// async function handleViewDetails(e) {
+//     e.event?.stopPropagation?.();
 
-    const popup = document.createElement("div");
-    popup.id = "workflowPopup";
-    popup.innerHTML = `
-        <div class="wf-overlay">
-            <div class="wf-card">
+//     if (e.row.rowType !== 'data') return;
 
-                <div class="wf-card-header">
-                    <div class="wf-card-header-left">
-                        <span class="wf-eyebrow">Workflow Progress</span>
-                        <span class="wf-status-badge wf-badge--${getBadgeVariant(appData.applicationStatus)}">
-                            ${appData.applicationStatus ?? '—'}
-                        </span>
-                    </div>
-                    <button class="wf-close" aria-label="Close">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                </div>
+//     const { applicationType, id } = e.row.data;
 
-                <div class="wf-progress-row">
-                    ${renderSummary(appData)}
-                </div>
+//     const response = await Http.get(
+//         `${window.APP_CONFIG.baseUrl}Applications/workflow-step?applicationType=${applicationType}&applicationId=${id}`
+//     );
 
-                <div class="wf-stepper-wrap">
-                    ${renderStepper(appData)}
-                </div>
+//     if (!response?.success) return;
 
-            </div>
-        </div>
-    `;
+//     const appData = response.data;
+//     showStepperPopup(appData);
+// }
 
-    document.body.appendChild(popup);
+/* ── Utility helpers ── */
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
 
-    requestAnimationFrame(() => {
-        popup.querySelector(".wf-card").classList.add("wf-card--visible");
-    });
+function getFirstName(fullName) {
+    if (!fullName) return '—';
+    return fullName.split(' ')[0];
+}
 
-    popup.querySelector(".wf-close")
-        .addEventListener("click", () => popup.remove());
+function formatWfDate(dateStr) {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, '0');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${day} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
 
-    popup.querySelector(".wf-overlay")
-        .addEventListener("click", (e) => {
-            if (e.target.classList.contains("wf-overlay")) popup.remove();
-        });
+function formatWfDateTime(dateStr) {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, '0');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    return `${day} ${months[d.getMonth()]} ${d.getFullYear()}, ${hours}:${mins}`;
 }
 
 function getBadgeVariant(status) {
@@ -256,105 +272,190 @@ function getBadgeVariant(status) {
     return 'neutral';
 }
 
-function renderSummary(appData) {
-    const { currentStepSequence, totalSteps } = appData;
-
-    const progressPercent = totalSteps > 0
-        ? Math.round((currentStepSequence / totalSteps) * 100)
-        : 0;
-
+/* ── Section renderers ── */
+function renderAppInfo(d) {
     return `
-        <div class="wf-progress-bar-track">
-            <div class="wf-progress-bar-fill" style="width:${progressPercent}%"></div>
-        </div>
-        <span class="wf-progress-text">
-            Step ${currentStepSequence} / ${totalSteps} &nbsp;·&nbsp; ${progressPercent}%
-        </span>
-    `;
+        <div class="wf-section">
+            <div class="wf-section-title">APPLICATION INFO</div>
+            <div class="wf-app-number">${escapeHtml(d.applicationNumber)}</div>
+            <div class="wf-app-tags">
+                ${d.isUrgent ? '<span class="wf-tag wf-tag--warning"><i class="fas fa-exclamation-circle" style="margin-right:4px"></i>URGENT</span>' : ''}
+                <span class="wf-tag wf-tag--${getBadgeVariant(d.applicationStatus)}">${escapeHtml((d.applicationStatus || '').toUpperCase())}</span>
+                <span class="wf-tag wf-tag--neutral">${escapeHtml((d.applicationType || '').toUpperCase())}</span>
+            </div>
+        </div>`;
 }
 
-function renderStepper(appData) {
+function renderSummarySection(d) {
+    const matCount = d.totalMaterials ?? 0;
+    const itemCount = d.totalItems ?? 0;
+    const quotation = d.quotationUrl || '—';
 
-    const steps = [...appData.steps]
-        .sort((a, b) => a.sequenceNo - b.sequenceNo);
+    const quotationHtml = d.quotationUrl
+        ? `<a class="wf-stat-link" href="${window.APP_CONFIG.qcsUrl.view}${escapeHtml(d.quotationUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(quotation)}</a>`
+        : escapeHtml(quotation);
+
+    return `
+        <div class="wf-section">
+            <div class="wf-section-title">SUMMARY</div>
+            <div class="wf-stats-row">
+                <div class="wf-stat-card">
+                    <div class="wf-stat-label">STEPS</div>
+                    <div class="wf-stat-value">
+                        <span class="wf-stat-big">${d.currentStepSequence ?? 0}</span><span class="wf-stat-small">/${d.totalSteps ?? 0}</span>
+                    </div>
+                </div>
+                <div class="wf-stat-card">
+                    <div class="wf-stat-label">MATERIALS</div>
+                    <div class="wf-stat-value"><span class="wf-stat-big">${matCount}</span></div>
+                </div>
+                <div class="wf-stat-card">
+                    <div class="wf-stat-label">ITEMS</div>
+                    <div class="wf-stat-value"><span class="wf-stat-big">${itemCount}</span></div>
+                </div>
+                <div class="wf-stat-card">
+                    <div class="wf-stat-label">QUOTATION</div>
+                    <div class="wf-stat-value wf-stat-value--text">${quotationHtml}</div>
+                </div>
+            </div>
+        </div>`;
+}
+
+function renderDetailsSection(d) {
+    return `
+        <div class="wf-section">
+            <div class="wf-section-title">DETAILS</div>
+            <div class="wf-details">
+                <div class="wf-detail-row">
+                    <div class="wf-detail-cell">
+                        <div class="wf-detail-label">SUPPLIER CODE</div>
+                        <div class="wf-detail-value">${escapeHtml(d.supplierCode)}</div>
+                    </div>
+                    <div class="wf-detail-cell">
+                        <div class="wf-detail-label">SUPPLIER</div>
+                        <div class="wf-detail-value">${escapeHtml(d.supplierName)}</div>
+                    </div>
+                </div>
+                <div class="wf-detail-row">
+                    <div class="wf-detail-cell">
+                        <div class="wf-detail-label">REQUESTER</div>
+                        <div class="wf-detail-value">${escapeHtml(d.requester)}</div>
+                    </div>
+                    <div class="wf-detail-cell">
+                        <div class="wf-detail-label">DEPARTMENT</div>
+                        <div class="wf-detail-value">${escapeHtml(d.department)}</div>
+                    </div>
+                </div>
+                <div class="wf-detail-row">
+                    <div class="wf-detail-cell">
+                        <div class="wf-detail-label">EFFECTIVE DATE</div>
+                        <div class="wf-detail-value">${formatWfDate(d.effectiveDate)}</div>
+                    </div>
+                    <div class="wf-detail-cell">
+                        <div class="wf-detail-label">COMPLETED AT</div>
+                        <div class="wf-detail-value">${d.completedAt ? formatWfDateTime(d.completedAt) : '—'}</div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+}
+
+function renderWorkflowSection(d) {
+    const steps = [...(d.steps || [])].sort((a, b) => a.sequenceNo - b.sequenceNo);
 
     const returnStep = steps.find(step =>
         step.assignees?.some(a =>
-            a.actionTaken === 'Return' ||
-            a.actionTaken === 'Cancel' ||
-            a.actionTaken === 'Reject'
+            a.actionTaken === 'Return' || a.actionTaken === 'Cancel' || a.actionTaken === 'Reject'
         )
     );
 
-    const stateList = steps.map(step => {
-
-        let state = 'pending';
-        let statusText = 'Pending';
-        let iconType = 'number';
+    const stepColumns = steps.map((step, idx) => {
+        const isLast = idx === steps.length - 1;
+        let dotClass = 'wf-sdot--pending';
 
         if (returnStep) {
-
-            if (step.sequenceNo === returnStep.sequenceNo) {
-                state = 'rejected';
-                statusText = appData.applicationStatus || 'Returned';
-                iconType = 'cross';
-            }
-            else if (step.isCurrentStep) {
-                state = 'current';
-                statusText = 'In Progress';
-            }
-            else {
-                state = 'pending';
-                statusText = 'Pending';
-            }
-
-        }
-        else {
-
-            if (step.isCurrentStep) {
-                state = 'current';
-                statusText = 'In Progress';
-            }
-            else if (step.completedAt) {
-                state = 'completed';
-                statusText = 'Completed';
-                iconType = 'check';
-            }
+            if (step.sequenceNo === returnStep.sequenceNo) dotClass = 'wf-sdot--rejected';
+            else if (step.isCurrentStep) dotClass = 'wf-sdot--current';
+        } else {
+            if (step.completedAt) dotClass = 'wf-sdot--completed';
+            else if (step.isCurrentStep) dotClass = 'wf-sdot--current';
         }
 
-        return { step, state, statusText, iconType };
-    });
-
-    const cols = stateList.map(({ step, state, statusText, iconType }, idx) => {
+        const isCompleted = dotClass === 'wf-sdot--completed';
+        const isRejected = dotClass === 'wf-sdot--rejected';
 
         let iconHtml;
-        if (iconType === 'check') {
-            iconHtml = `<svg class="wf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-        } else if (iconType === 'cross') {
-            iconHtml = `<svg class="wf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+        if (isCompleted) {
+            iconHtml = `<svg class="wf-sdot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+        } else if (isRejected) {
+            iconHtml = `<svg class="wf-sdot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
         } else {
-            iconHtml = `<span class="wf-num">${step.sequenceNo}</span>`;
+            iconHtml = `<span class="wf-sdot-num">${step.sequenceNo}</span>`;
         }
 
-        const isLast   = idx === stateList.length - 1;
-        const isDone   = state === 'completed';
-
-        const colClass = [
-            'wf-col',
-            isLast ? 'wf-col--last' : '',
-            isDone ? 'wf-col--done' : '',
-        ].join(' ').trim();
+        const assigneesHtml = (step.assignees || []).map(a => {
+            const indicatorClass = a.hasActioned ? 'wf-aind--active' : 'wf-aind--inactive';
+            const name = getFirstName(a.employeeName);
+            const action = a.actionTaken
+                ? `<span class="wf-aaction wf-aaction--${a.actionTaken.toLowerCase()}">${escapeHtml(a.actionTaken.toUpperCase())}</span>`
+                : `<span class="wf-aaction wf-aaction--none">—</span>`;
+            return `
+                <div class="wf-assignee">
+                    <span class="wf-aind ${indicatorClass}"></span>
+                    <span class="wf-aname">${escapeHtml(name)}</span>
+                    ${action}
+                </div>`;
+        }).join('');
 
         return `
-            <div class="${colClass}">
-                <div class="wf-dot wf-dot--${state}">${iconHtml}</div>
-                <div class="wf-label">${step.stepName}</div>
-                <div class="wf-sub wf-sub--${state}">${statusText}</div>
-            </div>
-        `;
+            <div class="wf-scol ${isLast ? 'wf-scol--last' : ''} ${isCompleted ? 'wf-scol--done' : ''}">
+                <div class="wf-sdot ${dotClass}">${iconHtml}</div>
+                <div class="wf-sname">${escapeHtml(step.stepName)}</div>
+                <div class="wf-assignees">${assigneesHtml}</div>
+            </div>`;
     }).join('');
 
-    return `<div class="wf-stepper">${cols}</div>`;
+    return `
+        <div class="wf-section wf-section--workflow">
+            <div class="wf-section-title">WORKFLOW STEPS</div>
+            <div class="wf-stepper-container">
+                ${stepColumns}
+            </div>
+        </div>`;
+}
+
+/* ── Main popup ── */
+function showStepperPopup(appData) {
+    console.log('App Data:', appData);
+    document.getElementById("workflowPopup")?.remove();
+
+    const popup = document.createElement("div");
+    popup.id = "workflowPopup";
+    popup.innerHTML = `
+        <div class="wf-overlay">
+            <div class="wf-card">
+                <button class="wf-close-btn" aria-label="Close">&times;</button>
+                ${renderAppInfo(appData)}
+                ${renderSummarySection(appData)}
+                ${renderDetailsSection(appData)}
+                ${renderWorkflowSection(appData)}
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(popup);
+
+    requestAnimationFrame(() => {
+        popup.querySelector(".wf-card").classList.add("wf-card--visible");
+    });
+
+    popup.querySelector(".wf-close-btn")
+        .addEventListener("click", () => popup.remove());
+
+    popup.querySelector(".wf-overlay")
+        .addEventListener("click", (e) => {
+            if (e.target.classList.contains("wf-overlay")) popup.remove();
+        });
 }
 
 window.ApplicationReportGridConfig = ApplicationReportGridConfig;

@@ -4,6 +4,29 @@
 @section Styles {
     <link rel="stylesheet" href="~/css/application/app-header.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/application/app-workflow.css" asp-append-version="true" />
+    <style>
+        .dx-datagrid-rowsview .dx-scrollable-container {
+            margin-bottom: 12px !important;
+        }
+        /* Always render horizontal scrollbar in hover-expanded state */
+        .dx-scrollbar-horizontal.dx-scrollbar-hoverable {
+            height: 12px !important;
+            background-color: rgba(191, 191, 191, 0.2) !important;
+            transition: none !important;
+        }
+
+        .dx-scrollbar-horizontal.dx-scrollbar-hoverable .dx-scrollable-scroll {
+            height: 12px !important;
+            transition: none !important;
+        }
+
+        .dx-datagrid .dx-scrollable-scrollbars-alwaysvisible >
+        .dx-scrollable-wrapper >
+        .dx-scrollable-container >
+        .dx-scrollable-content {
+            padding-bottom: 0px !important;
+        }
+    </style>
 }
 
 <div class="container">

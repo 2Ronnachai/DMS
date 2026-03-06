@@ -51,28 +51,26 @@ namespace GPCS_DMS.Controllers
             return RedirectToAction("Requisition");
         }
 
-        // public IActionResult Requisition()
-        // {
-        //     var applicationType = HttpContext.Session.GetString("ApplicationType");
-        //     var applicationId = HttpContext.Session.GetInt32("ApplicationId");
-
-        //     if(string.IsNullOrEmpty(applicationType))
-        //     {
-        //         return BadRequest("Application type is not set.");
-        //     }
-
-        //     ViewBag.ApplicationType = applicationType;
-        //     ViewBag.ApplicationId = applicationId;
-
-        //     return View();
-        // }
-
         public IActionResult Requisition(string applicationType, int? id)
         {
             if (string.IsNullOrEmpty(applicationType))
             {
                 return BadRequest("Application type is not set.");
             }
+
+            ViewBag.ApplicationType = applicationType;
+            ViewBag.ApplicationId = id;
+
+            return View();
+        }
+
+        public IActionResult Report(string applicationType, int? id)
+        {
+            if (string.IsNullOrEmpty(applicationType))
+                return BadRequest("Application type is required.");
+
+            if (!id.HasValue)
+                return BadRequest("Application ID is required.");
 
             ViewBag.ApplicationType = applicationType;
             ViewBag.ApplicationId = id;

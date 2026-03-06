@@ -49,6 +49,10 @@ class AppGrid {
                 width: 240,
                 placeholder: 'Search...'
             },
+            scrolling: {
+                mode: 'standard',
+                showScrollbar: 'always',
+            },
             filterRow: { visible: false },
             noDataText: 'No items added yet. Click "Add Item" to begin.',
             ...config

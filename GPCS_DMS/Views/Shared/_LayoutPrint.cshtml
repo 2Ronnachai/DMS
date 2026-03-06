@@ -1,0 +1,31 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Data Maintenance System</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/font-awesome/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <script>
+        window.APP_CONFIG = {
+            baseUrl: "@Configuration["ApiSettings:BaseUrl"]",
+            qcsUrl: {
+                view: "@Configuration["ApiSettings:QCSUrl:View"]",
+                service: "@Configuration["ApiSettings:QCSUrl:Service"]"
+            },
+            gpcsUrl: "@Configuration["ApiSettings:GPCSUrl"]",
+            host: "@(Context.Request.PathBase)" + "/"
+        };
+    </script>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body style="background:#f1f5f9;">
+    <main role="main" class="pb-4">
+        @RenderBody()
+    </main>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
